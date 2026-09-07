@@ -1,0 +1,9137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Knowledge Building — Teacher</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6fb;
+      color: #222;
+      --teacher-font: 16px;
+    }
+
+    body.font-small { --teacher-font: 13px; }
+    body.font-medium { --teacher-font: 16px; }
+    body.font-large { --teacher-font: 19px; }
+
+    body,
+    button,
+    input,
+    select,
+    textarea {
+      font-size: var(--teacher-font);
+    }
+
+    header {
+      background: #263238;
+      color: white;
+      padding: 18px 25px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: calc(var(--teacher-font) * 1.9);
+    }
+
+    header p {
+      margin: 5px 0 0;
+      opacity: 0.85;
+      font-size: var(--teacher-font);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 0 18px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+      font-size: var(--teacher-font);
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 7px;
+      padding: 9px 14px;
+      font-size: var(--teacher-font);
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #1976d2;
+      color: white;
+    }
+
+    .secondary {
+      background: #eceff1;
+      color: #263238;
+    }
+
+    .danger {
+      background: #d32f2f;
+      color: white;
+    }
+
+    .consolidate {
+      background: #8e24aa;
+      color: white;
+    }
+
+    .complete {
+      background: #43a047;
+      color: white;
+    }
+
+    .view-button {
+      background: #455a64;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    .session-info {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .info-box {
+      background: #f5f7fa;
+      padding: 13px;
+      border-radius: 10px;
+    }
+
+    .info-label {
+      font-size: calc(var(--teacher-font) * 0.78);
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: calc(var(--teacher-font) * 1.2);
+      font-weight: bold;
+    }
+
+    /* ======================================================
+       MANAGEMENT
+       ====================================================== */
+
+    .management-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .management-panel {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 14px;
+      background: #fafbfc;
+    }
+
+    .management-panel h3 {
+      margin-top: 0;
+    }
+
+    .small-note {
+      color: #777;
+      font-size: calc(var(--teacher-font) * 0.78);
+      line-height: 1.4;
+      margin-top: 6px;
+    }
+
+    .roster-list {
+      margin-top: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .roster-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .roster-item:last-child {
+      border-bottom: none;
+    }
+
+    .roster-number {
+      color: #777;
+      min-width: 28px;
+    }
+
+    .management-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .class-stat {
+      margin-top: 8px;
+      font-weight: bold;
+      color: #455a64;
+    }
+
+    /* ======================================================
+       CREATE ACTIVITY MODAL
+       ====================================================== */
+
+    .setup-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 25, 30, 0.72);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .setup-panel {
+      width: min(1050px, 96vw);
+      max-height: 94vh;
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+
+    .setup-header {
+      padding: 15px 18px;
+      background: #263238;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .setup-header h2 {
+      margin: 0;
+    }
+
+    .setup-body {
+      overflow-y: auto;
+      padding: 18px;
+    }
+
+    .setup-section {
+      margin-bottom: 20px;
+    }
+
+    .setup-section h3 {
+      margin: 0 0 10px;
+    }
+
+    .participant-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 7px;
+      max-height: 310px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 9px;
+      padding: 9px;
+      background: #fafafa;
+    }
+
+    .participant-item {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .participant-item input {
+      width: auto;
+      margin: 0;
+    }
+
+    .group-assignment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .assignment-row {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 8px;
+      align-items: center;
+      background: #f7f9fb;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .assignment-name {
+      font-weight: bold;
+    }
+
+    .group-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .group-summary-box {
+      padding: 9px;
+      border-radius: 8px;
+      background: #eef3f7;
+      border: 1px solid #d5dde3;
+    }
+
+    .group-summary-box.valid {
+      background: #edf8ef;
+      border-color: #b7dfbc;
+    }
+
+    .group-summary-box.invalid {
+      background: #fff4f4;
+      border-color: #efb5b5;
+    }
+
+    .setup-footer {
+      padding: 12px 18px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    /* ======================================================
+       CODE RESULT MODAL
+       ====================================================== */
+
+    .code-box {
+      background: #f5f7fa;
+      border: 1px solid #d8dee3;
+      border-radius: 10px;
+      padding: 14px;
+      margin: 10px 0;
+    }
+
+    .activity-code-large {
+      font-size: calc(var(--teacher-font) * 2);
+      font-weight: bold;
+      letter-spacing: 4px;
+      text-align: center;
+      padding: 12px;
+      background: #263238;
+      color: white;
+      border-radius: 9px;
+      margin: 8px 0;
+    }
+
+    .code-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .code-table th,
+    .code-table td {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    .code-table th {
+      background: #f3f5f7;
+    }
+
+    .student-code {
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .print-area {
+      background: white;
+    }
+
+    /* ======================================================
+       GROUP GRID
+       ====================================================== */
+
+    .groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .group-card {
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 13px;
+      background: white;
+    }
+
+    .group-card.ready {
+      border-color: #43a047;
+      background: #f1f8f2;
+    }
+
+    .group-card.working {
+      border-color: #1976d2;
+      background: #f2f7fc;
+    }
+
+    .group-card.waiting {
+      border-color: #bdbdbd;
+    }
+
+    .group-card.consolidating {
+      border-color: #8e24aa;
+      background: #faf3fc;
+    }
+
+    .group-card.complete {
+      border-color: #43a047;
+      background: #f1f8f2;
+    }
+
+    .group-title {
+      font-size: calc(var(--teacher-font) * 1.2);
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: calc(var(--teacher-font) * 0.78);
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .status.ready {
+      background: #c8e6c9;
+      color: #1b5e20;
+    }
+
+    .status.working {
+      background: #bbdefb;
+      color: #0d47a1;
+    }
+
+    .status.waiting {
+      background: #eeeeee;
+      color: #424242;
+    }
+
+    .status.consolidating {
+      background: #e1bee7;
+      color: #6a1b9a;
+    }
+
+    .status.complete {
+      background: #c8e6c9;
+      color: #1b5e20;
+    }
+
+    .count {
+      font-size: var(--teacher-font);
+      margin-bottom: 8px;
+    }
+
+    .progress {
+      height: 7px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 9px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #43a047;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .round-line {
+      font-size: calc(var(--teacher-font) * 0.9);
+      margin-bottom: 4px;
+    }
+
+    .round-description {
+      font-size: calc(var(--teacher-font) * 0.8);
+      color: #666;
+    }
+
+    .members {
+      margin-top: 9px;
+      padding-top: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    .member-heading {
+      font-size: calc(var(--teacher-font) * 0.85);
+      font-weight: bold;
+    }
+
+    .member {
+      padding: 2px 0;
+      font-size: calc(var(--teacher-font) * 0.82);
+    }
+
+    .group-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 11px;
+    }
+
+    .group-actions button {
+      width: 100%;
+      padding: 8px 6px;
+    }
+
+    .consolidation-note {
+      background: #f3e5f5;
+      color: #6a1b9a;
+      padding: 7px 9px;
+      border-radius: 7px;
+      font-size: calc(var(--teacher-font) * 0.75);
+      margin-top: 8px;
+      line-height: 1.3;
+    }
+
+    /* ======================================================
+       FONT CONTROL
+       ====================================================== */
+
+    .font-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .font-control-label {
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .font-size-button {
+      padding: 6px 10px;
+      min-width: 40px;
+    }
+
+    .font-size-button.active {
+      background: #263238;
+      color: white;
+    }
+
+    .refresh-note {
+      font-size: calc(var(--teacher-font) * 0.8);
+      color: #777;
+      margin-top: 7px;
+    }
+
+    .auto-refresh-indicator {
+      font-size: calc(var(--teacher-font) * 0.75);
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 13px;
+      flex-wrap: wrap;
+    }
+
+    .error-box {
+      background: #ffebee;
+      color: #b71c1c;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .success-box {
+      background: #edf8ef;
+      color: #1b5e20;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 12px;
+    }
+
+    /* ======================================================
+       GROUP VIEW MODAL
+       ====================================================== */
+
+    .group-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 25, 30, 0.72);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .group-modal-panel {
+      width: min(1450px, 96vw);
+      height: min(92vh, 950px);
+      background: white;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+
+    .group-modal-header {
+      padding: 13px 17px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-shrink: 0;
+    }
+
+    .group-modal-title {
+      margin: 0;
+      font-size: calc(var(--teacher-font) * 1.35);
+    }
+
+    .group-modal-subtitle {
+      margin: 3px 0 0;
+      color: #666;
+      font-size: calc(var(--teacher-font) * 0.78);
+    }
+
+    .close-modal {
+      background: #eceff1;
+      color: #263238;
+      font-size: calc(var(--teacher-font) * 1.1);
+      padding: 6px 11px;
+    }
+
+    .modal-legend {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      padding: 8px 15px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+      flex-shrink: 0;
+    }
+
+    .legend-chip {
+      border-radius: 20px;
+      padding: 4px 9px;
+      font-size: calc(var(--teacher-font) * 0.72);
+      font-weight: bold;
+    }
+
+    .legend-add {
+      background: #ecfdf5;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .legend-disagree {
+      background: #f5f3ff;
+      color: #6d28d9;
+      border: 1px solid #ddd6fe;
+    }
+
+    .legend-question {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fed7aa;
+    }
+
+    .modal-main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      background: #f4f6fb;
+      padding: 12px;
+      min-height: 0;
+    }
+
+    .knowledge-grid {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(230px, 1fr);
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: 10px;
+      min-height: 300px;
+    }
+
+    .knowledge-column {
+      min-width: 230px;
+      max-width: 360px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 9px;
+      display: flex;
+      flex-direction: column;
+      min-height: 300px;
+      max-height: 520px;
+      overflow: hidden;
+    }
+
+    .knowledge-column-header {
+      background: #263238;
+      color: white;
+      padding: 8px 10px;
+      font-weight: bold;
+      font-size: calc(var(--teacher-font) * 0.9);
+      flex-shrink: 0;
+    }
+
+    .knowledge-column-body {
+      overflow-y: auto;
+      padding: 8px;
+      min-height: 0;
+    }
+
+    .idea-label {
+      font-size: calc(var(--teacher-font) * 0.67);
+      color: #777;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .original-idea {
+      background: #f7f9fb;
+      border: 1px solid #d7dde2;
+      border-radius: 7px;
+      padding: 8px;
+      font-size: calc(var(--teacher-font) * 0.78);
+      line-height: 1.35;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .response-card {
+      border-radius: 7px;
+      padding: 7px 8px;
+      margin-top: 6px;
+      font-size: calc(var(--teacher-font) * 0.73);
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .response-add {
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+    }
+
+    .response-disagree {
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+    }
+
+    .response-question {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+    }
+
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .response-symbol {
+      font-weight: bold;
+      font-size: calc(var(--teacher-font) * 0.85);
+    }
+
+    .response-add .response-symbol { color: #15803d; }
+    .response-disagree .response-symbol { color: #7c3aed; }
+    .response-question .response-symbol { color: #ea580c; }
+
+    .response-meta {
+      font-size: calc(var(--teacher-font) * 0.62);
+      color: #777;
+      text-align: right;
+    }
+
+    .response-author {
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+
+    .no-content {
+      color: #999;
+      font-style: italic;
+      font-size: calc(var(--teacher-font) * 0.72);
+    }
+
+    /* ======================================================
+       CONSOLIDATION
+       ====================================================== */
+
+    .teacher-consolidation {
+      margin-top: 14px;
+      background: white;
+      border: 2px solid #8e24aa;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .teacher-consolidation-header {
+      background: #8e24aa;
+      color: white;
+      padding: 11px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .teacher-consolidation-title {
+      font-size: calc(var(--teacher-font) * 1.05);
+      font-weight: bold;
+    }
+
+    .teacher-consolidation-status {
+      font-size: calc(var(--teacher-font) * 0.7);
+      background: rgba(255,255,255,0.18);
+      padding: 4px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .teacher-consolidation-body {
+      padding: 14px;
+    }
+
+    .consolidation-instruction {
+      font-size: calc(var(--teacher-font) * 0.78);
+      color: #666;
+      margin-bottom: 9px;
+      line-height: 1.35;
+    }
+
+    .consolidation-content {
+      background: #faf7fb;
+      border: 1px solid #e1bee7;
+      border-radius: 9px;
+      padding: 12px;
+      min-height: 80px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+      font-size: calc(var(--teacher-font) * 0.85);
+    }
+
+    .consolidation-empty {
+      color: #999;
+      font-style: italic;
+    }
+
+    .consolidation-updated {
+      margin-top: 7px;
+      color: #777;
+      font-size: calc(var(--teacher-font) * 0.65);
+      text-align: right;
+    }
+
+    .loading-message {
+      text-align: center;
+      padding: 40px;
+      color: #777;
+    }
+
+    .modal-footer {
+      padding: 8px 14px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      background: white;
+    }
+
+    .modal-footer-note {
+      font-size: calc(var(--teacher-font) * 0.68);
+      color: #777;
+    }
+
+    @media (max-width: 800px) {
+      .management-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .session-info {
+        grid-template-columns: 1fr;
+      }
+
+      .group-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .group-modal {
+        padding: 5px;
+      }
+
+      .group-modal-panel {
+        width: 100%;
+        height: 96vh;
+      }
+
+      .knowledge-column {
+        max-height: 450px;
+      }
+
+      .modal-footer-note {
+        display: none;
+      }
+
+      .assignment-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+
+      #codeResultModal,
+      #codeResultModal * {
+        visibility: visible !important;
+      }
+
+      #codeResultModal {
+        position: absolute !important;
+        inset: 0 !important;
+        background: white !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-medium">
+
+<header>
+  <h1>🧠 Knowledge Building — Teacher</h1>
+  <p>Teacher Dashboard</p>
+</header>
+
+<div class="container">
+
+  <!-- ======================================================
+       LOGIN
+       ====================================================== -->
+
+  <div id="loginCard" class="card">
+
+    <h2>Teacher Login</h2>
+
+    <div style="margin-bottom:12px;">
+      <label>Email</label>
+      <input id="emailInput" type="email" placeholder="Teacher email">
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label>Password</label>
+      <input id="passwordInput" type="password" placeholder="Teacher password">
+    </div>
+
+    <button id="loginButton" class="primary">
+      LOG IN
+    </button>
+
+    <div id="loginMessage" class="message"></div>
+
+  </div>
+
+
+  <!-- ======================================================
+       DASHBOARD
+       ====================================================== -->
+
+  <div id="dashboard" class="hidden">
+
+    <!-- CLASS / ACTIVITY MANAGEMENT -->
+
+    <div class="card">
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        margin-bottom:15px;
+        flex-wrap:wrap;
+      ">
+
+        <h2 style="margin:0;">
+          Class & Activity Setup
+        </h2>
+
+        <div class="font-control">
+
+          <span class="font-control-label">
+            Text:
+          </span>
+
+          <button id="fontSmall"
+                  class="secondary font-size-button"
+                  type="button">
+            A
+          </button>
+
+          <button id="fontMedium"
+                  class="secondary font-size-button active"
+                  type="button">
+            A
+          </button>
+
+          <button id="fontLarge"
+                  class="secondary font-size-button"
+                  type="button">
+            A
+          </button>
+
+          <button id="logoutButton"
+                  class="danger">
+            LOG OUT
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="management-grid">
+
+        <!-- CLASS -->
+
+        <div class="management-panel">
+
+          <h3>🏫 My Classes</h3>
+
+          <label>Select Class</label>
+
+          <select id="classSelect">
+            <option value="">
+              Loading classes...
+            </option>
+          </select>
+
+          <div id="classStudentCount"
+               class="class-stat">
+            —
+          </div>
+
+          <div class="management-actions">
+
+            <button id="createClassButton"
+                    class="primary">
+              + CREATE CLASS
+            </button>
+
+            <button id="manageRosterButton"
+                    class="secondary"
+                    disabled>
+              MANAGE STUDENTS
+            </button>
+
+            <button id="deleteClassButton"
+                    class="danger"
+                    disabled>
+              🗑 DELETE CLASS
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- ACTIVITY -->
+
+        <div class="management-panel">
+
+          <h3>🧠 Activities</h3>
+
+          <div class="small-note">
+            Activities shown here belong only to the selected class.
+          </div>
+
+          <div style="margin-top:10px;">
+
+            <select id="sessionSelect">
+              <option value="">
+                Select a class first...
+              </option>
+            </select>
+
+          </div>
+
+          <div class="management-actions">
+
+            <button id="createActivityButton"
+                    class="primary"
+                    disabled>
+              + CREATE ACTIVITY
+            </button>
+
+            <button id="refreshButton"
+                    class="secondary">
+              ↻ REFRESH
+            </button>
+
+<button id="deleteActivityButton"
+        class="danger"
+        disabled>
+  🗑 DELETE ACTIVITY
+</button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="refresh-note">
+        The dashboard automatically checks for updated group progress.
+      </div>
+
+      <div class="auto-refresh-indicator">
+        Automatic background check every 10 seconds.
+      </div>
+
+      <div id="dashboardError"
+           class="error-box">
+      </div>
+
+    </div>
+
+
+    <!-- ====================================================
+         SESSION
+         ==================================================== -->
+
+    <div id="sessionCard"
+         class="card hidden">
+
+      <h2 id="sessionTitle"
+          style="margin-top:0;">
+        Activity
+      </h2>
+
+      <p id="sessionTopic"></p>
+
+      <div class="session-info">
+
+        <div class="info-box">
+
+          <div class="info-label">
+            Join Code
+          </div>
+
+          <div id="joinCodeDisplay"
+               class="info-value">
+            —
+          </div>
+
+        </div>
+
+        <div class="info-box">
+
+          <div class="info-label">
+            Activity Status
+          </div>
+
+          <div id="activityStatus"
+               class="info-value">
+            —
+          </div>
+
+        </div>
+
+        <div class="info-box">
+
+          <div class="info-label">
+            Groups
+          </div>
+
+          <div id="groupCount"
+               class="info-value">
+            —
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="top-actions">
+
+        <button id="pauseButton"
+                class="secondary">
+          PAUSE ALL
+        </button>
+
+        <button id="continueButton"
+                class="primary">
+          CONTINUE
+        </button>
+
+                      <button id="editGroupsButton">
+                            ✏️ EDIT GROUPS
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- ====================================================
+         GROUPS
+         ==================================================== -->
+
+    <div id="groupsCard"
+         class="card hidden">
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+      ">
+
+        <h2 style="margin:0;">
+          Groups
+        </h2>
+
+        <span style="
+          font-size:calc(var(--teacher-font) * 0.75);
+          color:#777;
+        ">
+          Use VIEW GROUP for the full knowledge-building record and consolidation.
+        </span>
+
+      </div>
+
+      <div id="groupsContainer"
+           class="groups">
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     CREATE CLASS MODAL
+     ======================================================== -->
+
+<div id="classModal"
+     class="setup-modal hidden">
+
+  <div class="setup-panel">
+
+    <div class="setup-header">
+
+      <h2>🏫 Create Class</h2>
+
+      <button id="closeClassModal"
+              class="close-modal"
+              type="button">
+        ✕
+      </button>
+
+    </div>
+
+    <div class="setup-body">
+
+      <div class="setup-section">
+
+        <label>Class Name</label>
+
+        <input id="newClassName"
+               type="text"
+               placeholder="e.g. P5-1">
+
+      </div>
+
+      <div class="setup-section">
+
+        <label>Student Names</label>
+
+        <textarea id="newClassStudents"
+                  rows="12"
+                  placeholder="Enter one student name per line&#10;&#10;Alice Tan&#10;Benjamin Lim&#10;Chloe Wong"></textarea>
+
+        <div class="small-note">
+          Enter one student per line. Names must be unique within this class.
+        </div>
+
+      </div>
+
+      <div id="classCreationError"
+           class="error-box">
+      </div>
+
+    </div>
+
+    <div class="setup-footer">
+
+      <button id="cancelClassButton"
+              class="secondary">
+        CANCEL
+      </button>
+
+      <button id="saveClassButton"
+              class="primary">
+        CREATE CLASS
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     MANAGE ROSTER MODAL
+     ======================================================== -->
+
+<div id="rosterModal"
+     class="setup-modal hidden">
+
+  <div class="setup-panel">
+
+    <div class="setup-header">
+
+      <div>
+        <h2>👥 Manage Students</h2>
+        <div id="rosterClassName"
+             style="opacity:.8;margin-top:3px;">
+        </div>
+      </div>
+
+      <button id="closeRosterModal"
+              class="close-modal"
+              type="button">
+        ✕
+      </button>
+
+    </div>
+
+    <div class="setup-body">
+
+      <div class="setup-section">
+
+        <label>Add Students</label>
+
+        <textarea id="additionalStudents"
+                  rows="7"
+                  placeholder="One student per line"></textarea>
+
+        <div class="management-actions">
+
+          <button id="addStudentsButton"
+                  class="primary">
+            ADD STUDENTS
+          </button>
+
+        </div>
+
+        <div id="rosterMessage"
+             class="message">
+        </div>
+
+      </div>
+
+      <div class="setup-section">
+
+        <h3>Current Roster</h3>
+
+        <div id="rosterList"
+             class="roster-list">
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="setup-footer">
+
+      <div class="small-note">
+        Student IDs are permanent and are reused automatically across activities.
+      </div>
+
+      <button id="closeRosterFooter"
+              class="secondary">
+        CLOSE
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- =========================================================
+     EDIT GROUPS MODAL
+     ========================================================= -->
+
+<div id="editGroupsModal"
+     class="setup-modal hidden">
+
+  <div class="setup-panel">
+
+    <div class="setup-header">
+
+      <div>
+        <h2>✏️ Edit Groups</h2>
+        <div style="opacity:.8;margin-top:3px;">
+          Arrange students before starting the activity
+        </div>
+      </div>
+
+      <button id="closeEditGroupsModal"
+              class="close-modal"
+              type="button">
+        ✕
+      </button>
+
+    </div>
+
+    <div class="setup-body">
+
+      <div class="setup-section">
+
+  <h3>Available Students</h3>
+
+  <div style="opacity:.75;margin-bottom:8px;">
+    Students removed from this activity can be added back.
+  </div>
+
+  <div id="editGroupsStudentList"
+       class="roster-list">
+  </div>
+
+</div>
+
+      <div class="setup-section">
+
+        <h3>Groups</h3>
+
+        <div id="editGroupsContainer">
+        </div>
+
+      </div>
+
+      <div id="editGroupsMessage"
+           class="message">
+      </div>
+
+    </div>
+
+    <div class="setup-footer">
+
+      <div class="small-note">
+        You can move students between groups or remove absent students.
+        Changes apply only to this activity.
+      </div>
+
+      <div class="management-actions">
+
+        <button id="saveEditGroupsButton"
+                class="primary">
+          SAVE GROUPS
+        </button>
+
+        <button id="closeEditGroupsFooter"
+                class="secondary">
+          CANCEL
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ========================================================
+     CREATE ACTIVITY MODAL
+     ======================================================== -->
+
+<div id="activityModal"
+     class="setup-modal hidden">
+
+  <div class="setup-panel">
+
+    <div class="setup-header">
+
+      <div>
+        <h2>🧠 Create Knowledge Building Activity</h2>
+
+        <div id="activityClassName"
+             style="opacity:.8;margin-top:3px;">
+        </div>
+      </div>
+
+      <button id="closeActivityModal"
+              class="close-modal"
+              type="button">
+        ✕
+      </button>
+
+    </div>
+
+    <div class="setup-body">
+
+      <!-- ACTIVITY DETAILS -->
+
+      <div class="setup-section">
+
+        <h3>1. Activity Details</h3>
+
+        <div class="row">
+
+          <div>
+
+            <label>Activity Title</label>
+
+            <input id="newActivityTitle"
+                   type="text"
+                   placeholder="e.g. Fractions Knowledge Building">
+
+          </div>
+
+          <div>
+
+            <label>Topic / Question</label>
+
+            <input id="newActivityTopic"
+                   type="text"
+                   placeholder="e.g. How can we compare fractions?">
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- PARTICIPANTS -->
+
+      <div class="setup-section">
+
+        <h3>
+          2. Select Participating Students
+        </h3>
+
+        <div class="management-actions">
+
+          <button id="selectAllStudentsButton"
+                  class="secondary"
+                  type="button">
+            SELECT ALL
+          </button>
+
+          <button id="clearAllStudentsButton"
+                  class="secondary"
+                  type="button">
+            CLEAR ALL
+          </button>
+
+        </div>
+
+        <div id="participantList"
+             class="participant-list">
+        </div>
+
+        <div id="participantCount"
+             class="small-note">
+          0 students selected
+        </div>
+
+      </div>
+
+
+      <!-- GROUPS -->
+
+      <div class="setup-section">
+
+        <h3>
+          3. Arrange Groups
+        </h3>
+
+        <div class="row">
+
+          <div style="max-width:260px;">
+
+            <label>Number of Groups</label>
+
+            <select id="groupNumberSelect">
+            </select>
+
+          </div>
+
+        </div>
+
+        <div class="small-note">
+          Each group should contain 3–5 students.
+          You can change the group assignments below.
+        </div>
+
+        <div id="assignmentGrid"
+             class="group-assignment-grid">
+        </div>
+
+        <div id="groupSummary"
+             class="group-summary">
+        </div>
+
+      </div>
+
+
+      <div id="activityCreationError"
+           class="error-box">
+      </div>
+
+    </div>
+
+    <div class="setup-footer">
+
+      <div class="small-note">
+        Activity Code and individual rejoin codes will be generated automatically.
+      </div>
+
+      <div style="display:flex;gap:8px;">
+
+        <button id="cancelActivityButton"
+                class="secondary">
+          CANCEL
+        </button>
+
+        <button id="createActivitySaveButton"
+                class="primary">
+          CREATE ACTIVITY
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     GENERATED CODES MODAL
+     ======================================================== -->
+
+<div id="codeResultModal"
+     class="setup-modal hidden">
+
+  <div class="setup-panel">
+
+    <div class="setup-header no-print">
+
+      <h2>✅ Activity Created</h2>
+
+      <button id="closeCodeResult"
+              class="close-modal"
+              type="button">
+        ✕
+      </button>
+
+    </div>
+
+    <div class="setup-body print-area">
+
+      <h2 id="codeResultTitle">
+        Activity
+      </h2>
+
+      <p>
+        Give students the Activity Code and their own personal
+        rejoin code.
+      </p>
+
+      <div class="code-box">
+
+        <div style="
+          font-weight:bold;
+          text-align:center;
+        ">
+          ACTIVITY CODE
+        </div>
+
+        <div id="createdActivityCode"
+             class="activity-code-large">
+          ------
+        </div>
+
+        <div style="
+          text-align:center;
+          color:#666;
+        ">
+          Students use this code to identify the activity.
+        </div>
+
+      </div>
+
+      <div class="code-box">
+
+        <strong>
+          Personal Rejoin Codes
+        </strong>
+
+        <div class="small-note">
+          Each student should receive only their own code.
+        </div>
+
+        <table class="code-table">
+
+          <thead>
+
+            <tr>
+              <th>Student</th>
+              <th>Group</th>
+              <th>Rejoin Code</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="createdCodesTable">
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+    <div class="setup-footer no-print">
+
+      <button id="printCodesButton"
+              class="secondary">
+        🖨 PRINT CODES
+      </button>
+
+      <button id="copyCodesButton"
+              class="secondary">
+        📋 COPY ALL
+      </button>
+
+      <button id="doneCodesButton"
+              class="primary">
+        DONE
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     GROUP VIEW MODAL
+     ======================================================== -->
+
+<div id="groupModal"
+     class="group-modal hidden">
+
+  <div class="group-modal-panel">
+
+    <div class="group-modal-header">
+
+      <div>
+
+        <h2 id="groupModalTitle"
+            class="group-modal-title">
+          Group
+        </h2>
+
+        <p id="groupModalSubtitle"
+           class="group-modal-subtitle">
+          Loading...
+        </p>
+
+      </div>
+
+      <button id="closeGroupModal"
+              class="close-modal"
+              type="button">
+        ✕
+      </button>
+
+    </div>
+
+    <div class="modal-legend">
+
+      <span class="legend-chip legend-add">
+        + Add on
+      </span>
+
+      <span class="legend-chip legend-disagree">
+        − Disagree
+      </span>
+
+      <span class="legend-chip legend-question">
+        ? Question
+      </span>
+
+    </div>
+
+    <div class="modal-main-scroll">
+
+      <div id="knowledgeGrid"
+           class="knowledge-grid">
+
+        <div class="loading-message">
+          Loading group knowledge...
+        </div>
+
+      </div>
+
+      <div id="teacherConsolidation"
+           class="teacher-consolidation">
+
+        <div class="teacher-consolidation-header">
+
+          <div class="teacher-consolidation-title">
+            🧠 Group Consolidation
+          </div>
+
+          <div id="teacherConsolidationStatus"
+               class="teacher-consolidation-status">
+            Loading...
+          </div>
+
+        </div>
+
+        <div class="teacher-consolidation-body">
+
+          <div class="consolidation-instruction">
+            This is the group's shared consolidation of what they
+            have learned from the original ideas and building responses.
+          </div>
+
+          <div id="teacherConsolidationContent"
+               class="consolidation-content">
+            Loading consolidation...
+          </div>
+
+          <div id="teacherConsolidationUpdated"
+               class="consolidation-updated">
+          </div>
+
+        </div>
+
+        <div class="group-view-actions">
+
+          <button
+            id="moveOnWithoutWaitingButton"
+            class="secondary"
+            type="button">
+            ⏭ MOVE ON WITHOUT WAITING
+          </button>
+
+                    </div>
+
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+
+      <div class="modal-footer-note">
+        Original ideas → building responses → group consolidation
+      </div>
+
+      <button id="closeGroupModalFooter"
+              class="secondary"
+              type="button">
+        CLOSE
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+  // =========================================================
+  // SUPABASE
+  // =========================================================
+
+  const SUPABASE_URL =
+    "https://tvbndbuxdyaavshrtuez.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_nR1py6IsW4DkpgG2ByEsLA_WbStN0Ps";
+
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY,
+      {
+        auth: {
+          storageKey: "kb-teacher-auth",
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false
+        }
+      }
+    );
+
+
+  // =========================================================
+  // ELEMENTS
+  // =========================================================
+
+  const loginCard =
+    document.getElementById("loginCard");
+
+  const dashboard =
+    document.getElementById("dashboard");
+
+  const emailInput =
+    document.getElementById("emailInput");
+
+  const passwordInput =
+    document.getElementById("passwordInput");
+
+  const loginButton =
+    document.getElementById("loginButton");
+
+  const loginMessage =
+    document.getElementById("loginMessage");
+
+  const logoutButton =
+    document.getElementById("logoutButton");
+
+  const classSelect =
+    document.getElementById("classSelect");
+
+  const classStudentCount =
+    document.getElementById("classStudentCount");
+
+  const sessionSelect =
+    document.getElementById("sessionSelect");
+
+  const refreshButton =
+    document.getElementById("refreshButton");
+
+  const createClassButton =
+    document.getElementById("createClassButton");
+
+  const manageRosterButton =
+    document.getElementById("manageRosterButton");
+
+  const editGroupsButton =
+           document.getElementById("editGroupsButton");
+
+const editGroupsModal =
+  document.getElementById("editGroupsModal");
+
+const closeEditGroupsModal =
+  document.getElementById("closeEditGroupsModal");
+
+const closeEditGroupsFooter =
+  document.getElementById("closeEditGroupsFooter");
+
+const editGroupsStudentList =
+  document.getElementById("editGroupsStudentList");
+
+const editGroupsContainer =
+  document.getElementById("editGroupsContainer");
+
+const editGroupsMessage =
+  document.getElementById("editGroupsMessage");
+
+const saveEditGroupsButton =
+  document.getElementById("saveEditGroupsButton");
+
+  const deleteClassButton =
+          document.getElementById("deleteClassButton");
+
+  const createActivityButton =
+    document.getElementById("createActivityButton");
+
+  const sessionCard =
+    document.getElementById("sessionCard");
+
+  const groupsCard =
+    document.getElementById("groupsCard");
+
+  const groupsContainer =
+    document.getElementById("groupsContainer");
+
+  const sessionTitle =
+    document.getElementById("sessionTitle");
+
+  const sessionTopic =
+    document.getElementById("sessionTopic");
+
+  const joinCodeDisplay =
+    document.getElementById("joinCodeDisplay");
+
+  const activityStatus =
+    document.getElementById("activityStatus");
+
+  const groupCount =
+    document.getElementById("groupCount");
+
+  const pauseButton =
+    document.getElementById("pauseButton");
+
+  const continueButton =
+    document.getElementById("continueButton");
+
+  const dashboardError =
+    document.getElementById("dashboardError");
+
+
+  // Class modal
+
+  const classModal =
+    document.getElementById("classModal");
+
+  const closeClassModal =
+    document.getElementById("closeClassModal");
+
+  const cancelClassButton =
+    document.getElementById("cancelClassButton");
+
+  const saveClassButton =
+    document.getElementById("saveClassButton");
+
+  const newClassName =
+    document.getElementById("newClassName");
+
+  const newClassStudents =
+    document.getElementById("newClassStudents");
+
+  const classCreationError =
+    document.getElementById("classCreationError");
+
+
+  // Roster modal
+
+  const rosterModal =
+    document.getElementById("rosterModal");
+
+  const closeRosterModal =
+    document.getElementById("closeRosterModal");
+
+  const closeRosterFooter =
+    document.getElementById("closeRosterFooter");
+
+  const rosterClassName =
+    document.getElementById("rosterClassName");
+
+  const additionalStudents =
+    document.getElementById("additionalStudents");
+
+  const addStudentsButton =
+    document.getElementById("addStudentsButton");
+
+  const rosterMessage =
+    document.getElementById("rosterMessage");
+
+  const rosterList =
+    document.getElementById("rosterList");
+
+
+  // Activity modal
+
+  const activityModal =
+    document.getElementById("activityModal");
+
+  const closeActivityModal =
+    document.getElementById("closeActivityModal");
+
+  const cancelActivityButton =
+    document.getElementById("cancelActivityButton");
+
+  const createActivitySaveButton =
+    document.getElementById(
+      "createActivitySaveButton"
+    );
+
+  const activityClassName =
+    document.getElementById("activityClassName");
+
+  const newActivityTitle =
+    document.getElementById("newActivityTitle");
+
+  const newActivityTopic =
+    document.getElementById("newActivityTopic");
+
+  const participantList =
+    document.getElementById("participantList");
+
+  const participantCount =
+    document.getElementById("participantCount");
+
+  const selectAllStudentsButton =
+    document.getElementById(
+      "selectAllStudentsButton"
+    );
+
+  const clearAllStudentsButton =
+    document.getElementById(
+      "clearAllStudentsButton"
+    );
+
+  const groupNumberSelect =
+    document.getElementById(
+      "groupNumberSelect"
+    );
+
+  const assignmentGrid =
+    document.getElementById(
+      "assignmentGrid"
+    );
+
+  const groupSummary =
+    document.getElementById(
+      "groupSummary"
+    );
+
+  const activityCreationError =
+    document.getElementById(
+      "activityCreationError"
+    );
+
+
+  // Code result
+
+  const codeResultModal =
+    document.getElementById(
+      "codeResultModal"
+    );
+
+  const codeResultTitle =
+    document.getElementById(
+      "codeResultTitle"
+    );
+
+  const createdActivityCode =
+    document.getElementById(
+      "createdActivityCode"
+    );
+
+  const createdCodesTable =
+    document.getElementById(
+      "createdCodesTable"
+    );
+
+  const printCodesButton =
+    document.getElementById(
+      "printCodesButton"
+    );
+
+  const copyCodesButton =
+    document.getElementById(
+      "copyCodesButton"
+    );
+
+  const doneCodesButton =
+    document.getElementById(
+      "doneCodesButton"
+    );
+
+  const closeCodeResult =
+    document.getElementById(
+      "closeCodeResult"
+    );
+
+
+  // Group modal
+
+  const groupModal =
+    document.getElementById("groupModal");
+
+  const groupModalTitle =
+    document.getElementById(
+      "groupModalTitle"
+    );
+
+  const groupModalSubtitle =
+    document.getElementById(
+      "groupModalSubtitle"
+    );
+
+  const knowledgeGrid =
+    document.getElementById(
+      "knowledgeGrid"
+    );
+
+  const teacherConsolidationStatus =
+    document.getElementById(
+      "teacherConsolidationStatus"
+    );
+
+  const teacherConsolidationContent =
+    document.getElementById(
+      "teacherConsolidationContent"
+    );
+
+  const teacherConsolidationUpdated =
+    document.getElementById(
+      "teacherConsolidationUpdated"
+    );
+
+  const moveOnWithoutWaitingButton =
+           document.getElementById(
+                 "moveOnWithoutWaitingButton"
+           );
+
+  const closeGroupModal =
+    document.getElementById(
+      "closeGroupModal"
+    );
+
+  const closeGroupModalFooter =
+    document.getElementById(
+      "closeGroupModalFooter"
+    );
+
+
+  // =========================================================
+  // STATE
+  // =========================================================
+
+  let currentTeacherId = null;
+
+  let currentClassId = null;
+
+  let currentSessionId = null;
+
+  let currentClassStudents = [];
+
+  let dashboardRefreshTimer = null;
+
+  let isLoadingDashboard = false;
+
+  let groupCards = new Map();
+
+  let createdCodesData = [];
+
+
+  // =========================================================
+  // ERROR DISPLAY
+  // =========================================================
+
+  function showDashboardError(message) {
+
+    dashboardError.textContent =
+      message || "";
+
+    dashboardError.style.display =
+      message ? "block" : "none";
+  }
+
+
+  function showClassCreationError(message) {
+
+    classCreationError.textContent =
+      message || "";
+
+    classCreationError.style.display =
+      message ? "block" : "none";
+  }
+
+
+  function showActivityCreationError(message) {
+
+    activityCreationError.textContent =
+      message || "";
+
+    activityCreationError.style.display =
+      message ? "block" : "none";
+  }
+
+
+  // =========================================================
+  // FONT SIZE
+  // =========================================================
+
+  function setFontSize(size) {
+
+    document.body.classList.remove(
+      "font-small",
+      "font-medium",
+      "font-large"
+    );
+
+    document.body.classList.add(
+      "font-" + size
+    );
+
+    document.querySelectorAll(
+      ".font-size-button"
+    ).forEach(
+      button =>
+        button.classList.remove("active")
+    );
+
+    const selectedButton =
+      document.getElementById(
+        "font" +
+        size.charAt(0).toUpperCase() +
+        size.slice(1)
+      );
+
+    if (selectedButton) {
+      selectedButton.classList.add("active");
+    }
+
+    localStorage.setItem(
+      "kb-teacher-font-size",
+      size
+    );
+  }
+
+
+  document
+    .getElementById("fontSmall")
+    .addEventListener(
+      "click",
+      () => setFontSize("small")
+    );
+
+  document
+    .getElementById("fontMedium")
+    .addEventListener(
+      "click",
+      () => setFontSize("medium")
+    );
+
+  document
+    .getElementById("fontLarge")
+    .addEventListener(
+      "click",
+      () => setFontSize("large")
+    );
+
+
+  const savedFontSize =
+    localStorage.getItem(
+      "kb-teacher-font-size"
+    );
+
+  if (
+    savedFontSize === "small" ||
+    savedFontSize === "medium" ||
+    savedFontSize === "large"
+  ) {
+
+    setFontSize(
+      savedFontSize
+    );
+  }
+
+
+  // =========================================================
+  // LOGIN
+  // =========================================================
+
+  loginButton.addEventListener(
+    "click",
+    loginTeacher
+  );
+
+
+  async function loginTeacher() {
+
+    const email =
+      emailInput.value.trim();
+
+    const password =
+      passwordInput.value;
+
+    if (!email || !password) {
+
+      loginMessage.textContent =
+        "Please enter your email and password.";
+
+      return;
+    }
+
+    loginButton.disabled =
+      true;
+
+    loginMessage.textContent =
+      "Logging in...";
+
+
+    const {
+      error
+    } =
+      await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+
+    loginButton.disabled =
+      false;
+
+
+    if (error) {
+
+      console.error(error);
+
+      loginMessage.textContent =
+        "Login failed: " +
+        error.message;
+
+      return;
+    }
+
+
+    loginMessage.textContent =
+      "";
+
+    await showDashboard();
+  }
+
+
+  // =========================================================
+  // GET CURRENT TEACHER
+  // =========================================================
+
+  async function getCurrentTeacher() {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getUser();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data.user) {
+      throw new Error(
+        "Teacher account could not be identified."
+      );
+    }
+
+    currentTeacherId =
+      data.user.id;
+
+    return data.user;
+  }
+
+
+  // =========================================================
+  // SHOW DASHBOARD
+  // =========================================================
+
+  async function showDashboard() {
+
+    loginCard.classList.add("hidden");
+
+    dashboard.classList.remove(
+      "hidden"
+    );
+
+    groupCards.clear();
+
+    groupsContainer.innerHTML =
+      "";
+
+    groupsCard.classList.add(
+      "hidden"
+    );
+
+    sessionCard.classList.add(
+      "hidden"
+    );
+
+    showDashboardError("");
+
+    try {
+
+      await getCurrentTeacher();
+
+      await loadClasses();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showDashboardError(
+        "Could not load teacher dashboard: " +
+        error.message
+      );
+    }
+
+    startDashboardAutoRefresh();
+  }
+
+
+  // =========================================================
+  // LOAD CLASSES
+  // =========================================================
+
+  async function loadClasses() {
+
+    const previousValue =
+      currentClassId;
+
+
+    classSelect.innerHTML =
+      "<option value=''>" +
+      "Loading classes..." +
+      "</option>";
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("kb_classes")
+        .select(
+          "id, name, created_at"
+        )
+        .eq(
+          "created_by",
+          currentTeacherId
+        )
+        .order(
+          "name",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    classSelect.innerHTML =
+      "<option value=''>" +
+      "Choose a class..." +
+      "</option>";
+
+
+    (data || []).forEach(
+      classRow => {
+
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          classRow.id;
+
+        option.textContent =
+          classRow.name;
+
+        classSelect.appendChild(
+          option
+        );
+      }
+    );
+
+
+    if (
+      previousValue &&
+      (data || []).some(
+        row =>
+          row.id === previousValue
+      )
+    ) {
+
+      classSelect.value =
+        previousValue;
+
+      await loadSelectedClass();
+
+    } else {
+
+      currentClassId =
+        null;
+
+      currentClassStudents =
+        [];
+
+      updateClassControls();
+
+    }
+  }
+
+
+  // =========================================================
+  // CLASS SELECT
+  // =========================================================
+
+  classSelect.addEventListener(
+    "change",
+    async function() {
+
+      currentClassId =
+        this.value || null;
+
+      currentSessionId =
+        null;
+
+      sessionCard.classList.add(
+        "hidden"
+      );
+
+      groupsCard.classList.add(
+        "hidden"
+      );
+
+      groupsContainer.innerHTML =
+        "";
+
+      groupCards.clear();
+
+      if (!currentClassId) {
+
+        currentClassStudents =
+          [];
+
+        updateClassControls();
+
+        sessionSelect.innerHTML =
+          "<option value=''>" +
+          "Select a class first..." +
+          "</option>";
+
+        return;
+      }
+
+      await loadSelectedClass();
+    }
+  );
+
+
+  async function loadSelectedClass() {
+
+    if (!currentClassId) {
+      return;
+    }
+
+    try {
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from("kb_students")
+          .select(
+            "id, display_name, created_at"
+          )
+          .eq(
+            "class_id",
+            currentClassId
+          )
+          .order(
+            "display_name",
+            {
+              ascending: true
+            }
+          );
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      currentClassStudents =
+        data || [];
+
+
+      updateClassControls();
+
+      await loadSessions();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showDashboardError(
+        "Could not load class: " +
+        error.message
+      );
+    }
+  }
+
+
+  function updateClassControls() {
+
+    if (!currentClassId) {
+
+      classStudentCount.textContent =
+        "No class selected.";
+
+      manageRosterButton.disabled =
+        true;
+
+      deleteClassButton.disabled =
+                    true;
+
+      createActivityButton.disabled =
+        true;
+
+      return;
+    }
+
+
+    classStudentCount.textContent =
+      currentClassStudents.length +
+      " student" +
+      (
+        currentClassStudents.length === 1
+          ? ""
+          : "s"
+      );
+
+    manageRosterButton.disabled =
+      false;
+
+    deleteClassButton.disabled =
+               false;
+
+    createActivityButton.disabled =
+      currentClassStudents.length < 2;
+  }
+
+
+  // =========================================================
+  // LOAD ACTIVITIES FOR SELECTED CLASS
+  // =========================================================
+
+  async function loadSessions() {
+
+    if (!currentClassId) {
+      return;
+    }
+
+
+    const previousValue =
+      currentSessionId;
+
+
+    sessionSelect.innerHTML =
+      "<option value=''>" +
+      "Loading activities..." +
+      "</option>";
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("kb_sessions")
+        .select(
+          "id, title, topic, join_code, status, is_paused"
+        )
+        .eq(
+          "class_id",
+          currentClassId
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    if (error) {
+
+      console.error(error);
+
+      sessionSelect.innerHTML =
+        "<option value=''>" +
+        "Could not load activities" +
+        "</option>";
+
+      showDashboardError(
+        "Could not load activities: " +
+        error.message
+      );
+
+      return;
+    }
+
+
+    showDashboardError("");
+
+
+    sessionSelect.innerHTML =
+      "<option value=''>" +
+      "Choose an activity..." +
+      "</option>";
+
+
+    (data || []).forEach(
+      session => {
+
+        const option =
+          document.createElement(
+            "option"
+          );
+
+        option.value =
+          session.id;
+
+        option.textContent =
+          session.title +
+          " — " +
+          session.join_code;
+
+        sessionSelect.appendChild(
+          option
+        );
+      }
+    );
+
+
+    if (
+      previousValue &&
+      (data || []).some(
+        session =>
+          session.id === previousValue
+      )
+    ) {
+
+      sessionSelect.value =
+        previousValue;
+
+    } else {
+
+      currentSessionId =
+        null;
+    }
+  }
+
+
+  // =========================================================
+  // SELECT ACTIVITY
+  // =========================================================
+
+  sessionSelect.addEventListener(
+    "change",
+    async function() {
+
+      const sessionId =
+        this.value;
+
+
+      if (!sessionId) {
+
+        sessionCard.classList.add(
+          "hidden"
+        );
+
+        groupsCard.classList.add(
+          "hidden"
+        );
+
+        groupsContainer.innerHTML =
+          "";
+
+        groupCards.clear();
+
+        currentSessionId =
+          null;
+
+        return;
+      }
+
+
+      currentSessionId =
+        sessionId;
+
+      await loadDashboard(true);
+
+      deleteActivityButton.disabled =
+                    !currentSessionId;
+    }
+  );
+
+
+  // =========================================================
+  // CREATE CLASS MODAL
+  // =========================================================
+
+  createClassButton.addEventListener(
+    "click",
+    openClassModal
+  );
+
+
+  function openClassModal() {
+
+    newClassName.value =
+      "";
+
+    newClassStudents.value =
+      "";
+
+    showClassCreationError("");
+
+    classModal.classList.remove(
+      "hidden"
+    );
+
+    newClassName.focus();
+  }
+
+
+  function closeClassCreationModal() {
+
+    classModal.classList.add(
+      "hidden"
+    );
+  }
+
+
+  closeClassModal.addEventListener(
+    "click",
+    closeClassCreationModal
+  );
+
+  cancelClassButton.addEventListener(
+    "click",
+    closeClassCreationModal
+  );
+
+
+  // =========================================================
+  // CREATE CLASS
+  // =========================================================
+
+  saveClassButton.addEventListener(
+    "click",
+    createClass
+  );
+
+
+  async function createClass() {
+
+    showClassCreationError("");
+
+
+    const name =
+      newClassName.value.trim();
+
+
+    const names =
+      newClassStudents.value
+        .split(/\r?\n/)
+        .map(
+          name =>
+            name.trim()
+        )
+        .filter(
+          Boolean
+        );
+
+
+    if (!name) {
+
+      showClassCreationError(
+        "Please enter a class name."
+      );
+
+      return;
+    }
+
+
+    if (names.length === 0) {
+
+      showClassCreationError(
+        "Please enter at least one student."
+      );
+
+      return;
+    }
+
+
+    const duplicateNames =
+      names.filter(
+        (studentName, index) =>
+          names.indexOf(
+            studentName
+          ) !== index
+      );
+
+
+    if (
+      duplicateNames.length > 0
+    ) {
+
+      showClassCreationError(
+        "Duplicate student name found: " +
+        [...new Set(duplicateNames)].join(
+          ", "
+        )
+      );
+
+      return;
+    }
+
+
+    saveClassButton.disabled =
+      true;
+
+    saveClassButton.textContent =
+      "CREATING...";
+
+
+    try {
+
+      const {
+        data: existingClass,
+        error: existingError
+      } =
+        await supabaseClient
+          .from("kb_classes")
+          .select("id")
+          .eq(
+            "created_by",
+            currentTeacherId
+          )
+          .eq(
+            "name",
+            name
+          )
+          .maybeSingle();
+
+
+      if (existingError) {
+        throw existingError;
+      }
+
+
+      if (existingClass) {
+
+        throw new Error(
+          "You already have a class with this name."
+        );
+      }
+
+
+      const {
+        data: classRow,
+        error: classError
+      } =
+        await supabaseClient
+          .from("kb_classes")
+          .insert({
+            name,
+            created_by:
+              currentTeacherId
+          })
+          .select(
+            "id, name"
+          )
+          .single();
+
+
+      if (classError) {
+        throw classError;
+      }
+
+
+      const studentRows =
+        names.map(
+          display_name => ({
+            class_id:
+              classRow.id,
+
+            display_name
+          })
+        );
+
+
+      const {
+        error: studentError
+      } =
+        await supabaseClient
+          .from("kb_students")
+          .insert(
+            studentRows
+          );
+
+
+      if (studentError) {
+
+        // Remove the just-created class
+        // if its roster insertion failed.
+
+        await supabaseClient
+          .from("kb_classes")
+          .delete()
+          .eq(
+            "id",
+            classRow.id
+          );
+
+        throw studentError;
+      }
+
+
+      closeClassCreationModal();
+
+      currentClassId =
+        classRow.id;
+
+      await loadClasses();
+
+      classSelect.value =
+        classRow.id;
+
+      await loadSelectedClass();
+
+      alert(
+        "Class created successfully."
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Create class error:",
+        error
+      );
+
+      showClassCreationError(
+        "Could not create class:\n" +
+        error.message
+      );
+
+
+    } finally {
+
+      saveClassButton.disabled =
+        false;
+
+      saveClassButton.textContent =
+        "CREATE CLASS";
+    }
+  }
+
+
+  // =========================================================
+  // ROSTER MODAL
+  // =========================================================
+
+  manageRosterButton.addEventListener(
+    "click",
+    openRosterModal
+  );
+
+  editGroupsButton.addEventListener(
+           "click",
+           openEditGroupsModal
+     );
+
+  moveOnWithoutWaitingButton.addEventListener(
+           "click",
+            handleMoveOnWithoutWaiting
+     );
+
+closeEditGroupsModal.addEventListener(
+  "click",
+  function() {
+    editGroupsModal.classList.add("hidden");
+  }
+);
+
+closeEditGroupsFooter.addEventListener(
+  "click",
+  function() {
+    editGroupsModal.classList.add("hidden");
+  }
+);
+
+saveEditGroupsButton.addEventListener(
+  "click",
+  saveEditedGroups
+);
+
+  async function openRosterModal() {
+
+    if (!currentClassId) {
+      return;
+    }
+
+
+    const selectedOption =
+      classSelect.options[
+        classSelect.selectedIndex
+      ];
+
+
+    rosterClassName.textContent =
+      selectedOption
+        ? selectedOption.textContent
+        : "";
+
+
+    additionalStudents.value =
+      "";
+
+    rosterMessage.textContent =
+      "";
+
+    await loadRosterList();
+
+    rosterModal.classList.remove(
+      "hidden"
+    );
+  }
+
+
+  function closeRoster() {
+
+    rosterModal.classList.add(
+      "hidden"
+    );
+  }
+
+
+  closeRosterModal.addEventListener(
+    "click",
+    closeRoster
+  );
+
+  closeRosterFooter.addEventListener(
+    "click",
+    closeRoster
+  );
+
+
+  async function loadRosterList() {
+
+    rosterList.innerHTML =
+      "<div style='padding:12px;color:#777;'>" +
+      "Loading..." +
+      "</div>";
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("kb_students")
+        .select(
+          "id, display_name"
+        )
+        .eq(
+          "class_id",
+          currentClassId
+        )
+        .order(
+          "display_name",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+
+      rosterList.innerHTML =
+        "<div style='padding:12px;color:#b71c1c;'>" +
+        escapeHtml(error.message) +
+        "</div>";
+
+      return;
+    }
+
+
+    rosterList.innerHTML =
+      "";
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+
+      rosterList.innerHTML =
+        "<div style='padding:12px;color:#777;'>" +
+        "No students." +
+        "</div>";
+
+      return;
+    }
+
+
+    data.forEach(
+      (student, index) => {
+
+        const row =
+          document.createElement(
+            "div"
+          );
+
+        row.className =
+          "roster-item";
+
+        row.innerHTML =
+          "<div>" +
+          "<span class='roster-number'>" +
+          (index + 1) +
+          ".</span>" +
+          escapeHtml(
+            student.display_name
+          ) +
+          "</div>";
+
+        rosterList.appendChild(
+          row
+        );
+      }
+    );
+  }
+
+
+  // =========================================================
+  // ADD STUDENTS
+  // =========================================================
+
+  addStudentsButton.addEventListener(
+    "click",
+    addStudentsToClass
+  );
+
+
+  async function addStudentsToClass() {
+
+    rosterMessage.textContent =
+      "";
+
+
+    const names =
+      additionalStudents.value
+        .split(/\r?\n/)
+        .map(
+          name =>
+            name.trim()
+        )
+        .filter(
+          Boolean
+        );
+
+
+    if (names.length === 0) {
+
+      rosterMessage.textContent =
+        "Please enter at least one student.";
+
+      return;
+    }
+
+
+    const duplicates =
+      names.filter(
+        (name, index) =>
+          names.indexOf(name) !== index
+      );
+
+
+    if (
+      duplicates.length > 0
+    ) {
+
+      rosterMessage.textContent =
+        "Duplicate name in your list: " +
+        [...new Set(duplicates)].join(", ");
+
+      return;
+    }
+
+
+    addStudentsButton.disabled =
+      true;
+
+    addStudentsButton.textContent =
+      "ADDING...";
+
+
+    try {
+
+      const {
+        data: existing,
+        error: existingError
+      } =
+        await supabaseClient
+          .from("kb_students")
+          .select(
+            "display_name"
+          )
+          .eq(
+            "class_id",
+            currentClassId
+          );
+
+
+      if (existingError) {
+        throw existingError;
+      }
+
+
+      const existingNames =
+        new Set(
+          (existing || []).map(
+            student =>
+              student.display_name
+          )
+        );
+
+
+      const conflicts =
+        names.filter(
+          name =>
+            existingNames.has(name)
+        );
+
+
+      if (
+        conflicts.length > 0
+      ) {
+
+        throw new Error(
+          "These students already exist: " +
+          conflicts.join(", ")
+        );
+      }
+
+
+      const rows =
+        names.map(
+          display_name => ({
+            class_id:
+              currentClassId,
+
+            display_name
+          })
+        );
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("kb_students")
+          .insert(rows);
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      additionalStudents.value =
+        "";
+
+      rosterMessage.textContent =
+        names.length +
+        " student" +
+        (
+          names.length === 1
+            ? ""
+            : "s"
+        ) +
+        " added successfully.";
+
+
+      await loadSelectedClass();
+
+      await loadRosterList();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      rosterMessage.textContent =
+        "Could not add students: " +
+        error.message;
+
+
+    } finally {
+
+      addStudentsButton.disabled =
+        false;
+
+      addStudentsButton.textContent =
+        "ADD STUDENTS";
+    }
+  }
+
+
+  // =========================================================
+  // CREATE ACTIVITY MODAL
+  // =========================================================
+
+  createActivityButton.addEventListener(
+    "click",
+    openActivityModal
+  );
+
+
+  async function openActivityModal() {
+
+    if (!currentClassId) {
+      return;
+    }
+
+
+    if (
+      currentClassStudents.length < 2
+    ) {
+
+      alert(
+        "You need at least two students in the class."
+      );
+
+      return;
+    }
+
+
+    const selectedOption =
+      classSelect.options[
+        classSelect.selectedIndex
+      ];
+
+
+    activityClassName.textContent =
+      selectedOption
+        ? selectedOption.textContent
+        : "";
+
+
+    newActivityTitle.value =
+      "";
+
+    newActivityTopic.value =
+      "";
+
+    showActivityCreationError("");
+
+    participantList.innerHTML =
+      "";
+
+    currentClassStudents.forEach(
+      student => {
+
+        const label =
+          document.createElement(
+            "label"
+          );
+
+        label.className =
+          "participant-item";
+
+        label.innerHTML =
+          "<input type='checkbox' " +
+          "class='participant-checkbox' " +
+          "value='" +
+          escapeHtml(student.id) +
+          "'>" +
+          "<span>" +
+          escapeHtml(
+            student.display_name
+          ) +
+          "</span>";
+
+        participantList.appendChild(
+          label
+        );
+      }
+    );
+
+
+    participantList
+      .querySelectorAll(
+        ".participant-checkbox"
+      )
+      .forEach(
+        checkbox => {
+
+          checkbox.addEventListener(
+            "change",
+            handleParticipantChange
+          );
+        }
+      );
+
+
+    updateParticipantCount();
+
+    updateGroupNumberOptions();
+
+    activityModal.classList.remove(
+      "hidden"
+    );
+  }
+
+
+  function closeActivityCreationModal() {
+
+    activityModal.classList.add(
+      "hidden"
+    );
+  }
+
+
+  closeActivityModal.addEventListener(
+    "click",
+    closeActivityCreationModal
+  );
+
+  cancelActivityButton.addEventListener(
+    "click",
+    closeActivityCreationModal
+  );
+
+
+  // =========================================================
+  // PARTICIPANT SELECTION
+  // =========================================================
+
+  selectAllStudentsButton.addEventListener(
+    "click",
+    function() {
+
+      participantList
+        .querySelectorAll(
+          ".participant-checkbox"
+        )
+        .forEach(
+          checkbox => {
+            checkbox.checked = true;
+          }
+        );
+
+      updateParticipantCount();
+
+      updateGroupNumberOptions();
+
+      renderAssignments();
+    }
+  );
+
+
+  clearAllStudentsButton.addEventListener(
+    "click",
+    function() {
+
+      participantList
+        .querySelectorAll(
+          ".participant-checkbox"
+        )
+        .forEach(
+          checkbox => {
+            checkbox.checked = false;
+          }
+        );
+
+      updateParticipantCount();
+
+      updateGroupNumberOptions();
+
+      renderAssignments();
+    }
+  );
+
+
+  function handleParticipantChange() {
+
+    updateParticipantCount();
+
+    updateGroupNumberOptions();
+
+    renderAssignments();
+  }
+
+
+  function getSelectedStudentIds() {
+
+    return Array.from(
+      participantList.querySelectorAll(
+        ".participant-checkbox:checked"
+      )
+    ).map(
+      checkbox =>
+        checkbox.value
+    );
+  }
+
+
+  function getSelectedStudents() {
+
+    const selectedIds =
+      new Set(
+        getSelectedStudentIds()
+      );
+
+    return currentClassStudents.filter(
+      student =>
+        selectedIds.has(
+          student.id
+        )
+    );
+  }
+
+
+  function updateParticipantCount() {
+
+    const count =
+      getSelectedStudentIds().length;
+
+
+    participantCount.textContent =
+      count +
+      " student" +
+      (
+        count === 1
+          ? ""
+          : "s"
+      ) +
+      " selected";
+  }
+
+
+  // =========================================================
+  // GROUP NUMBER OPTIONS
+  // =========================================================
+
+  function updateGroupNumberOptions() {
+
+    const selectedCount =
+      getSelectedStudentIds().length;
+
+
+    const oldValue =
+      Number(
+        groupNumberSelect.value
+      );
+
+
+    groupNumberSelect.innerHTML =
+      "";
+
+
+    if (
+      selectedCount < 2
+    ) {
+
+      assignmentGrid.innerHTML =
+        "<div class='small-note'>" +
+        "Select students first." +
+        "</div>";
+
+      groupSummary.innerHTML =
+        "";
+
+      return;
+    }
+
+
+    /*
+      Groups are intended to contain 3–5 students.
+
+      We offer all feasible group counts.
+    */
+
+    let minGroups =
+      Math.ceil(
+        selectedCount / 5
+      );
+
+    let maxGroups =
+      Math.floor(
+        selectedCount / 3
+      );
+
+
+    /*
+      For very small test groups, allow 1 group
+      so the interface remains usable.
+    */
+
+    if (
+      selectedCount < 3
+    ) {
+
+      minGroups = 1;
+      maxGroups = 1;
+    }
+
+
+    if (
+      minGroups > maxGroups
+    ) {
+
+      groupNumberSelect.innerHTML =
+        "<option value=''>" +
+        "No valid group size" +
+        "</option>";
+
+      assignmentGrid.innerHTML =
+        "<div class='small-note'>" +
+        "With " +
+        selectedCount +
+        " selected students, groups of 3–5 are not possible. " +
+        "Change the number of selected students." +
+        "</div>";
+
+      groupSummary.innerHTML =
+        "";
+
+      return;
+    }
+
+
+    for (
+      let count = minGroups;
+      count <= maxGroups;
+      count++
+    ) {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        count;
+
+      option.textContent =
+        count +
+        " group" +
+        (
+          count === 1
+            ? ""
+            : "s"
+        );
+
+      groupNumberSelect.appendChild(
+        option
+      );
+    }
+
+
+    let desired =
+      oldValue >= minGroups &&
+      oldValue <= maxGroups
+        ? oldValue
+        : Math.ceil(
+            selectedCount / 4
+          );
+
+
+    desired =
+      Math.max(
+        minGroups,
+        Math.min(
+          maxGroups,
+          desired
+        )
+      );
+
+
+    groupNumberSelect.value =
+      desired;
+
+
+    renderAssignments();
+  }
+
+
+  groupNumberSelect.addEventListener(
+    "change",
+    renderAssignments
+  );
+
+
+  // =========================================================
+  // GROUP ASSIGNMENTS
+  // =========================================================
+
+  function renderAssignments() {
+
+    const students =
+      getSelectedStudents();
+
+
+    const groupNumber =
+      Number(
+        groupNumberSelect.value
+      );
+
+
+    assignmentGrid.innerHTML =
+      "";
+
+
+    if (
+      students.length === 0 ||
+      !groupNumber
+    ) {
+
+      groupSummary.innerHTML =
+        "";
+
+      return;
+    }
+
+
+    /*
+      Keep existing assignments where possible.
+    */
+
+    const previousAssignments =
+      new Map();
+
+
+    assignmentGrid
+      .querySelectorAll(
+        ".assignment-select"
+      )
+      .forEach(
+        select => {
+
+          previousAssignments.set(
+            select.dataset.studentId,
+            select.value
+          );
+        }
+      );
+
+
+    /*
+      Since the grid was cleared above, preserve
+      assignments from our state instead.
+    */
+
+    if (
+      !window.kbAssignmentState
+    ) {
+
+      window.kbAssignmentState =
+        {};
+    }
+
+
+    const validStudentIds =
+      new Set(
+        students.map(
+          student =>
+            student.id
+        )
+      );
+
+
+    Object.keys(
+      window.kbAssignmentState
+    ).forEach(
+      studentId => {
+
+        if (
+          !validStudentIds.has(
+            studentId
+          )
+        ) {
+
+          delete window.kbAssignmentState[
+            studentId
+          ];
+        }
+      }
+    );
+
+
+    const existingAssignedGroups =
+      Object.values(
+        window.kbAssignmentState
+      );
+
+
+    let nextGroup =
+      1;
+
+
+    students.forEach(
+      student => {
+
+        if (
+          !window.kbAssignmentState[
+            student.id
+          ]
+        ) {
+
+          window.kbAssignmentState[
+            student.id
+          ] =
+            nextGroup;
+
+          nextGroup =
+            nextGroup >= groupNumber
+              ? 1
+              : nextGroup + 1;
+        }
+      }
+    );
+
+
+    students.forEach(
+      student => {
+
+        const row =
+          document.createElement(
+            "div"
+          );
+
+        row.className =
+          "assignment-row";
+
+
+        const name =
+          document.createElement(
+            "div"
+          );
+
+        name.className =
+          "assignment-name";
+
+        name.textContent =
+          student.display_name;
+
+
+        const select =
+          document.createElement(
+            "select"
+          );
+
+        select.className =
+          "assignment-select";
+
+        select.dataset.studentId =
+          student.id;
+
+
+        for (
+          let groupNumberIndex = 1;
+          groupNumberIndex <= groupNumber;
+          groupNumberIndex++
+        ) {
+
+          const option =
+            document.createElement(
+              "option"
+            );
+
+          option.value =
+            groupNumberIndex;
+
+          option.textContent =
+            "Group " +
+            groupNumberIndex;
+
+          select.appendChild(
+            option
+          );
+        }
+
+
+        let assigned =
+          Number(
+            window.kbAssignmentState[
+              student.id
+            ]
+          );
+
+
+        if (
+          !assigned ||
+          assigned < 1 ||
+          assigned > groupNumber
+        ) {
+
+          assigned =
+            (
+              students.indexOf(
+                student
+              ) %
+              groupNumber
+            ) + 1;
+        }
+
+
+        select.value =
+          assigned;
+
+
+        window.kbAssignmentState[
+          student.id
+        ] =
+          assigned;
+
+
+        select.addEventListener(
+          "change",
+          function() {
+
+            window.kbAssignmentState[
+              student.id
+            ] =
+              Number(
+                this.value
+              );
+
+            renderGroupSummary();
+          }
+        );
+
+
+        row.appendChild(
+          name
+        );
+
+        row.appendChild(
+          select
+        );
+
+        assignmentGrid.appendChild(
+          row
+        );
+      }
+    );
+
+
+    renderGroupSummary();
+  }
+
+
+  function renderGroupSummary() {
+
+    const students =
+      getSelectedStudents();
+
+
+    const groupNumber =
+      Number(
+        groupNumberSelect.value
+      );
+
+
+    groupSummary.innerHTML =
+      "";
+
+
+    if (
+      students.length === 0 ||
+      !groupNumber
+    ) {
+      return;
+    }
+
+
+    for (
+      let group = 1;
+      group <= groupNumber;
+      group++
+    ) {
+
+      const members =
+        students.filter(
+          student =>
+            Number(
+              window.kbAssignmentState?.[
+                student.id
+              ]
+            ) === group
+        );
+
+
+      const box =
+        document.createElement(
+          "div"
+        );
+
+
+      box.className =
+        "group-summary-box";
+
+
+      if (
+        members.length >= 3 &&
+        members.length <= 5
+      ) {
+
+        box.classList.add(
+          "valid"
+        );
+
+      } else {
+
+        box.classList.add(
+          "invalid"
+        );
+      }
+
+
+      box.innerHTML =
+        "<strong>Group " +
+        group +
+        "</strong><br>" +
+        members.length +
+        " student" +
+        (
+          members.length === 1
+            ? ""
+            : "s"
+        );
+
+
+      if (
+        members.length > 0
+      ) {
+
+        box.innerHTML +=
+          "<div style='margin-top:4px;font-size:.85em;'>" +
+          members.map(
+            member =>
+              escapeHtml(
+                member.display_name
+              )
+          ).join(
+            ", "
+          ) +
+          "</div>";
+      }
+
+
+      groupSummary.appendChild(
+        box
+      );
+    }
+  }
+
+
+  // =========================================================
+  // GENERATE UNIQUE ACTIVITY CODE
+  // =========================================================
+
+  function randomDigits(
+    length
+  ) {
+
+    let result = "";
+
+    for (
+      let i = 0;
+      i < length;
+      i++
+    ) {
+
+      result +=
+        Math.floor(
+          Math.random() * 10
+        );
+    }
+
+    return result;
+  }
+
+
+  async function generateUniqueActivityCode() {
+
+    for (
+      let attempt = 0;
+      attempt < 30;
+      attempt++
+    ) {
+
+      const code =
+        String(
+          Math.floor(
+            100000 +
+            Math.random() *
+            900000
+          )
+        );
+
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from("kb_sessions")
+          .select("id")
+          .eq(
+            "join_code",
+            code
+          )
+          .maybeSingle();
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      if (!data) {
+        return code;
+      }
+    }
+
+
+    throw new Error(
+      "Could not generate a unique activity code. Please try again."
+    );
+  }
+
+
+  // =========================================================
+  // GENERATE UNIQUE REJOIN CODES
+  // =========================================================
+
+  function generateUniqueRejoinCodes(
+    count
+  ) {
+
+    const codes =
+      new Set();
+
+
+    while (
+      codes.size < count
+    ) {
+
+      codes.add(
+        String(
+          Math.floor(
+            1000 +
+            Math.random() *
+            9000
+          )
+        )
+      );
+    }
+
+
+    return Array.from(
+      codes
+    );
+  }
+
+
+  // =========================================================
+  // CREATE ACTIVITY
+  // =========================================================
+
+  createActivitySaveButton.addEventListener(
+    "click",
+    createActivity
+  );
+
+
+  async function createActivity() {
+
+    showActivityCreationError("");
+
+
+    const title =
+      newActivityTitle.value.trim();
+
+    const topic =
+      newActivityTopic.value.trim();
+
+    const students =
+      getSelectedStudents();
+
+    const numberOfGroups =
+      Number(
+        groupNumberSelect.value
+      );
+
+
+    if (!title) {
+
+      showActivityCreationError(
+        "Please enter an activity title."
+      );
+
+      return;
+    }
+
+
+    if (!topic) {
+
+      showActivityCreationError(
+        "Please enter the topic/question."
+      );
+
+      return;
+    }
+
+
+    if (
+      students.length < 2
+    ) {
+
+      showActivityCreationError(
+        "Please select at least two students."
+      );
+
+      return;
+    }
+
+
+    if (
+      !numberOfGroups
+    ) {
+
+      showActivityCreationError(
+        "Please choose a number of groups."
+      );
+
+      return;
+    }
+
+
+    const groups =
+      [];
+
+
+    for (
+      let group = 1;
+      group <= numberOfGroups;
+      group++
+    ) {
+
+      const members =
+        students.filter(
+          student =>
+            Number(
+              window.kbAssignmentState?.[
+                student.id
+              ]
+            ) === group
+        );
+
+
+      if (
+        members.length < 3 ||
+        members.length > 5
+      ) {
+
+        showActivityCreationError(
+          "Group " +
+          group +
+          " has " +
+          members.length +
+          " students. Each group must contain 3–5 students."
+        );
+
+        return;
+      }
+
+
+      groups.push({
+        groupNumber:
+          group,
+
+        name:
+          "Group " +
+          group,
+
+        members
+      });
+    }
+
+
+    createActivitySaveButton.disabled =
+      true;
+
+    createActivitySaveButton.textContent =
+      "CREATING...";
+
+
+    try {
+
+      // -----------------------------------------------------
+      // 1. Generate activity code
+      // -----------------------------------------------------
+
+      const joinCode =
+        await generateUniqueActivityCode();
+
+
+      // -----------------------------------------------------
+      // 2. Generate personal rejoin codes
+      // -----------------------------------------------------
+
+      const plaintextCodes =
+        generateUniqueRejoinCodes(
+          students.length
+        );
+
+
+      // -----------------------------------------------------
+      // 3. Hash codes through Supabase RPC
+      // -----------------------------------------------------
+
+      const codeHashMap =
+        new Map();
+
+
+      for (
+        let index = 0;
+        index < students.length;
+        index++
+      ) {
+
+        const student =
+          students[index];
+
+        const plaintextCode =
+          plaintextCodes[index];
+
+
+        const {
+          data: hash,
+          error: hashError
+        } =
+          await supabaseClient.rpc(
+            "kb_hash_rejoin_code",
+            {
+              p_code:
+                plaintextCode
+            }
+          );
+
+
+        if (hashError) {
+          throw hashError;
+        }
+
+
+        if (!hash) {
+
+          throw new Error(
+            "The rejoin-code hashing function returned no hash."
+          );
+        }
+
+
+        codeHashMap.set(
+          student.id,
+          {
+            plaintextCode,
+            hash
+          }
+        );
+      }
+
+
+      // -----------------------------------------------------
+      // 4. Create session
+      // -----------------------------------------------------
+
+      const {
+        data: session,
+        error: sessionError
+      } =
+        await supabaseClient
+          .from("kb_sessions")
+          .insert({
+            class_id:
+              currentClassId,
+
+            created_by:
+              currentTeacherId,
+
+            title,
+
+            topic,
+
+            join_code:
+              joinCode,
+
+            status:
+              "setup",
+
+            is_paused:
+              false
+          })
+          .select(
+            "id, title, topic, join_code"
+          )
+          .single();
+
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+
+      try {
+
+        // ---------------------------------------------------
+        // 5. Create groups
+        // ---------------------------------------------------
+
+        const groupRows =
+          groups.map(
+            group => ({
+              session_id:
+                session.id,
+
+              group_number:
+                group.groupNumber,
+
+              name:
+                group.name
+            })
+          );
+
+
+        const {
+          data: createdGroups,
+          error: groupError
+        } =
+          await supabaseClient
+            .from("kb_groups")
+            .insert(
+              groupRows
+            )
+            .select(
+              "id, group_number, name"
+            )
+            .order(
+              "group_number",
+              {
+                ascending: true
+              }
+            );
+
+
+        if (groupError) {
+          throw groupError;
+        }
+
+
+        if (
+          !createdGroups ||
+          createdGroups.length !== groups.length
+        ) {
+
+          throw new Error(
+            "The groups could not be created correctly."
+          );
+        }
+
+
+        // ---------------------------------------------------
+        // 6. Group memberships
+        // ---------------------------------------------------
+
+        const groupMembershipRows =
+          [];
+
+
+        createdGroups.forEach(
+          createdGroup => {
+
+            const sourceGroup =
+              groups.find(
+                group =>
+                  group.groupNumber ===
+                  createdGroup.group_number
+              );
+
+
+            sourceGroup.members.forEach(
+              (
+                student,
+                index
+              ) => {
+
+                groupMembershipRows.push({
+                  session_id:
+                    session.id,
+
+                  group_id:
+                    createdGroup.id,
+
+                  student_id:
+                    student.id,
+
+                  position:
+                    index + 1
+                });
+              }
+            );
+          }
+        );
+
+
+        const {
+          error: membershipError
+        } =
+          await supabaseClient
+            .from("kb_group_members")
+            .insert(
+              groupMembershipRows
+            );
+
+
+        if (membershipError) {
+          throw membershipError;
+        }
+
+
+        // ---------------------------------------------------
+        // 7. Group session state
+        // ---------------------------------------------------
+
+        const groupSessionRows =
+          createdGroups.map(
+            group => ({
+              session_id:
+                session.id,
+
+              group_id:
+                group.id,
+
+              current_round:
+                0,
+
+              status:
+                "waiting"
+            })
+          );
+
+
+        const {
+          error: groupSessionError
+        } =
+          await supabaseClient
+            .from("kb_group_sessions")
+            .insert(
+              groupSessionRows
+            );
+
+
+        if (groupSessionError) {
+          throw groupSessionError;
+        }
+
+
+        // ---------------------------------------------------
+        // 8. Activity-specific student access
+        // ---------------------------------------------------
+
+        const sessionStudentRows =
+          students.map(
+            student => {
+
+              const codeInfo =
+                codeHashMap.get(
+                  student.id
+                );
+
+              return {
+                session_id:
+                  session.id,
+
+                student_id:
+                  student.id,
+
+                auth_user_id:
+                  null,
+
+                rejoin_code_hash:
+                  codeInfo.hash,
+
+                active:
+                  true
+              };
+            }
+          );
+
+
+        const {
+          error: sessionStudentError
+        } =
+          await supabaseClient
+            .from("kb_session_students")
+            .insert(
+              sessionStudentRows
+            );
+
+
+        if (sessionStudentError) {
+          throw sessionStudentError;
+        }
+
+// Save plaintext rejoin codes for teacher viewing later
+const rejoinCodeRows = students.map(student => ({
+  session_id: session.id,
+  student_id: student.id,
+  rejoin_code: codeHashMap.get(student.id).plaintextCode
+}));
+
+const {
+  error: rejoinCodeError
+} = await supabaseClient
+  .from("kb_rejoin_codes")
+  .insert(rejoinCodeRows);
+
+if (rejoinCodeError) {
+  throw rejoinCodeError;
+}
+
+      } catch (setupError) {
+
+        /*
+          Best-effort cleanup of the newly-created activity
+          if one of the setup inserts fails.
+        */
+
+        await supabaseClient.rpc(
+                          "kb_delete_activity",
+                          {
+                               p_session_id: session.id
+                          }
+                     );
+
+        throw setupError;
+      }
+
+
+      // -----------------------------------------------------
+      // 9. Show codes
+      // -----------------------------------------------------
+
+      createdCodesData =
+        students.map(
+          student => {
+
+            const group =
+              groups.find(
+                group =>
+                  group.members.some(
+                    member =>
+                      member.id ===
+                      student.id
+                  )
+              );
+
+
+            return {
+              studentName:
+                student.display_name,
+
+              studentId:
+                student.id,
+
+              groupNumber:
+                group
+                  ? group.groupNumber
+                  : "",
+
+              rejoinCode:
+                codeHashMap.get(
+                  student.id
+                ).plaintextCode
+            };
+          }
+        );
+
+
+      codeResultTitle.textContent =
+        title;
+
+      createdActivityCode.textContent =
+        joinCode;
+
+      createdCodesTable.innerHTML =
+        "";
+
+
+      createdCodesData.forEach(
+        item => {
+
+          const row =
+            document.createElement(
+              "tr"
+            );
+
+          row.innerHTML =
+            "<td>" +
+            escapeHtml(
+              item.studentName
+            ) +
+            "</td>" +
+
+            "<td>" +
+            "Group " +
+            escapeHtml(
+              String(
+                item.groupNumber
+              )
+            ) +
+            "</td>" +
+
+            "<td class='student-code'>" +
+            escapeHtml(
+              item.rejoinCode
+            ) +
+            "</td>";
+
+          createdCodesTable.appendChild(
+            row
+          );
+        }
+      );
+
+
+      closeActivityCreationModal();
+
+      currentSessionId =
+        session.id;
+
+
+      await loadSessions();
+
+
+      sessionSelect.value =
+        session.id;
+
+
+      codeResultModal.classList.remove(
+        "hidden"
+      );
+
+
+      await loadDashboard(true);
+
+
+    } catch (error) {
+
+      console.error(
+        "Create activity error:",
+        error
+      );
+
+      showActivityCreationError(
+        "Could not create activity:\n" +
+        error.message
+      );
+
+
+    } finally {
+
+      createActivitySaveButton.disabled =
+        false;
+
+      createActivitySaveButton.textContent =
+        "CREATE ACTIVITY";
+    }
+  }
+
+
+  // =========================================================
+  // COPY GENERATED CODES
+  // =========================================================
+
+  copyCodesButton.addEventListener(
+    "click",
+    async function() {
+
+      let text =
+        "Knowledge Building Activity\n";
+
+      text +=
+        "Activity Code: " +
+        createdActivityCode.textContent +
+        "\n\n";
+
+      text +=
+        "Student Rejoin Codes\n";
+
+      text +=
+        "--------------------\n";
+
+
+      createdCodesData.forEach(
+        item => {
+
+          text +=
+            item.studentName +
+            " | Group " +
+            item.groupNumber +
+            " | " +
+            item.rejoinCode +
+            "\n";
+        }
+      );
+
+
+      try {
+
+        await navigator.clipboard.writeText(
+          text
+        );
+
+        copyCodesButton.textContent =
+          "✓ COPIED";
+
+        setTimeout(
+          () => {
+            copyCodesButton.textContent =
+              "📋 COPY ALL";
+          },
+          1800
+        );
+
+      } catch (error) {
+
+        alert(
+          "Could not copy automatically. Please use Print instead."
+        );
+      }
+    }
+  );
+
+
+  printCodesButton.addEventListener(
+    "click",
+    function() {
+
+      window.print();
+    }
+  );
+
+
+  function closeCodeResultModal() {
+
+    codeResultModal.classList.add(
+      "hidden"
+    );
+  }
+
+
+  closeCodeResult.addEventListener(
+    "click",
+    closeCodeResultModal
+  );
+
+  doneCodesButton.addEventListener(
+    "click",
+    closeCodeResultModal
+  );
+
+
+  // =========================================================
+  // LOAD DASHBOARD
+  // =========================================================
+
+  async function loadDashboard(
+    rebuild = false
+  ) {
+
+    if (!currentSessionId) {
+      return;
+    }
+
+    if (isLoadingDashboard) {
+      return;
+    }
+
+    isLoadingDashboard = true;
+
+
+    try {
+
+      const {
+        data: sessionData,
+        error: sessionError
+      } =
+        await supabaseClient.auth.getSession();
+
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+
+      if (!sessionData.session) {
+
+        throw new Error(
+          "Teacher login session is no longer available."
+        );
+      }
+
+
+      await loadSessionInfo();
+
+      await loadGroups(
+        rebuild
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Dashboard error:",
+        error
+      );
+
+      showDashboardError(
+        "Could not update dashboard: " +
+        error.message
+      );
+
+
+    } finally {
+
+      isLoadingDashboard =
+        false;
+    }
+  }
+
+
+  // =========================================================
+  // SESSION INFORMATION
+  // =========================================================
+
+  async function loadSessionInfo() {
+
+    const {
+      data: session,
+      error
+    } =
+      await supabaseClient
+        .from("kb_sessions")
+        .select(
+          "id, title, topic, join_code, status, is_paused"
+        )
+        .eq(
+          "id",
+          currentSessionId
+        )
+        .single();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    sessionCard.classList.remove(
+      "hidden"
+    );
+
+
+    sessionTitle.textContent =
+      session.title;
+
+    sessionTopic.textContent =
+      "Topic: " +
+      session.topic;
+
+    joinCodeDisplay.textContent =
+      session.join_code;
+
+    activityStatus.textContent =
+      session.is_paused
+        ? "PAUSED"
+        : session.status.toUpperCase();
+
+    pauseButton.disabled =
+      session.is_paused;
+
+    continueButton.disabled =
+      !session.is_paused;
+
+    editGroupsButton.disabled =
+                 !["setup", "thinking"].includes(
+                      session.status
+  );
+
+  }
+
+
+  // =========================================================
+  // LOAD GROUPS
+  // =========================================================
+
+  async function loadGroups(
+    rebuild = false
+  ) {
+
+    const {
+      data: groups,
+      error
+    } =
+      await supabaseClient
+        .from("kb_groups")
+        .select(
+          "id, group_number, name"
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        )
+        .order(
+          "group_number",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    const groupList =
+      groups || [];
+
+
+    groupCount.textContent =
+      groupList.length;
+
+
+    groupsCard.classList.remove(
+      "hidden"
+    );
+
+
+    if (
+      rebuild ||
+      groupCards.size === 0
+    ) {
+
+      groupsContainer.innerHTML =
+        "";
+
+      groupCards.clear();
+
+
+      for (
+        const group of groupList
+      ) {
+
+        await createGroupCard(
+          group
+        );
+      }
+
+      return;
+    }
+
+
+    const currentGroupIds =
+      new Set(
+        groupList.map(
+          group =>
+            group.id
+        )
+      );
+
+
+    for (
+      const [
+        groupId,
+        card
+      ] of groupCards.entries()
+    ) {
+
+      if (
+        !currentGroupIds.has(
+          groupId
+        )
+      ) {
+
+        card.remove();
+
+        groupCards.delete(
+          groupId
+        );
+      }
+    }
+
+
+    for (
+      const group of groupList
+    ) {
+
+      if (
+        groupCards.has(
+          group.id
+        )
+      ) {
+
+        await updateGroupCard(
+          group
+        );
+
+      } else {
+
+        await createGroupCard(
+          group
+        );
+      }
+    }
+  }
+
+
+  // =========================================================
+  // CREATE GROUP CARD
+  // =========================================================
+
+  async function createGroupCard(
+    group
+  ) {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "group-card";
+
+    card.dataset.groupId =
+      group.id;
+
+
+    card.innerHTML = `
+
+      <div class="group-title">
+        ${escapeHtml(
+          group.name ||
+          "Group " +
+          group.group_number
+        )}
+      </div>
+
+      <div class="status status-display">
+        LOADING
+      </div>
+
+      <div class="count">
+        <strong class="count-display">
+          — / —
+        </strong>
+        students submitted
+      </div>
+
+      <div class="progress">
+        <div
+          class="progress-bar progress-display"
+        ></div>
+      </div>
+
+      <div class="round-line">
+        Round:
+        <strong class="round-display">
+          —
+        </strong>
+      </div>
+
+      <div class="round-description">
+        Loading...
+      </div>
+
+      <div class="members">
+
+        <div class="member-heading">
+          Members
+        </div>
+
+        <div
+          class="members-display"
+          style="margin-top:5px;"
+        >
+          Loading...
+        </div>
+
+      </div>
+
+      <div class="group-actions">
+
+        <button
+          class="view-button view-group-button"
+          type="button"
+        >
+          👁 VIEW GROUP
+        </button>
+
+<button
+  class="view-button view-rejoin-codes-button"
+  type="button"
+>
+  🔑 REJOIN CODES
+</button>
+
+        <button
+          class="primary rotate-button"
+          type="button"
+        >
+          WAITING
+        </button>
+
+        <button
+          class="consolidate consolidate-button"
+          type="button"
+        >
+          🧠 START CONSOLIDATION
+        </button>
+
+      </div>
+
+      <div class="consolidation-note hidden">
+        Group members can now see the group's
+        ideas and building responses.
+      </div>
+    `;
+
+
+    groupsContainer.appendChild(
+      card
+    );
+
+    groupCards.set(
+      group.id,
+      card
+    );
+
+
+    const rotateButton =
+      card.querySelector(
+        ".rotate-button"
+      );
+
+    rotateButton.addEventListener(
+      "click",
+      function() {
+        rotateGroup(
+          group.id
+        );
+      }
+    );
+
+
+    const consolidateButton =
+      card.querySelector(
+        ".consolidate-button"
+      );
+
+    consolidateButton.addEventListener(
+      "click",
+      function() {
+        startConsolidation(
+          group.id
+        );
+      }
+    );
+
+
+    const viewButton =
+      card.querySelector(
+        ".view-group-button"
+      );
+
+    viewButton.addEventListener(
+      "click",
+      function() {
+        openGroupView(
+          group.id
+        );
+      }
+    );
+
+const rejoinCodesButton =
+  card.querySelector(
+    ".view-rejoin-codes-button"
+  );
+
+rejoinCodesButton.addEventListener(
+  "click",
+  function() {
+    viewRejoinCodes(
+      group.id
+    );
+  }
+);
+
+    await updateGroupCard(
+      group
+    );
+  }
+
+
+  // =========================================================
+  // GET COMPLETE GROUP ROSTER
+  // =========================================================
+
+  async function getGroupMembers(
+    groupId
+  ) {
+
+    const {
+      data: memberRows,
+      error: memberError
+    } =
+      await supabaseClient
+        .from("kb_group_members")
+        .select(
+          "student_id, position"
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        )
+        .eq(
+          "group_id",
+          groupId
+        )
+        .order(
+          "position",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (memberError) {
+      throw memberError;
+    }
+
+
+    const members =
+      memberRows || [];
+
+
+    if (
+      members.length === 0
+    ) {
+
+      return [];
+    }
+
+
+    const studentIds =
+      members.map(
+        member =>
+          member.student_id
+      );
+
+
+    const {
+      data: students,
+      error: studentError
+    } =
+      await supabaseClient
+        .from("kb_students")
+        .select(
+          "id, display_name"
+        )
+        .in(
+          "id",
+          studentIds
+        );
+
+
+    if (studentError) {
+
+      console.error(
+        "Student-name query error:",
+        studentError
+      );
+
+
+      return members.map(
+        member => ({
+
+          student_id:
+            member.student_id,
+
+          position:
+            member.position,
+
+          display_name:
+            "Student"
+        })
+      );
+    }
+
+
+    const studentMap =
+      new Map(
+        (students || []).map(
+          student => [
+            student.id,
+            student.display_name
+          ]
+        )
+      );
+
+
+    return members.map(
+      member => ({
+
+        student_id:
+          member.student_id,
+
+        position:
+          member.position,
+
+        display_name:
+          studentMap.get(
+            member.student_id
+          ) ||
+          "Unknown student"
+      })
+    );
+  }
+
+  async function openEditGroupsModal() {
+
+editGroupsModal.dataset.originalStudentIds =
+  "";
+
+  if (!currentSessionId) {
+    return;
+  }
+
+  editGroupsModal.classList.remove(
+    "hidden"
+  );
+
+  editGroupsMessage.textContent =
+    "Loading current groups...";
+
+  editGroupsContainer.innerHTML =
+    "";
+
+editGroupsStudentList.innerHTML =
+  "";
+
+const {
+  data: inactiveRows,
+  error: inactiveError
+} =
+  await supabaseClient
+    .from("kb_session_students")
+    .select("student_id")
+    .eq("session_id", currentSessionId)
+    .eq("active", false);
+
+if (inactiveError) {
+  throw inactiveError;
+}
+
+if (inactiveRows && inactiveRows.length > 0) {
+
+  const inactiveStudentIds =
+    inactiveRows.map(
+      row => row.student_id
+    );
+
+  const {
+    data: inactiveStudents,
+    error: inactiveStudentsError
+  } =
+    await supabaseClient
+      .from("kb_students")
+      .select("id, display_name")
+      .in("id", inactiveStudentIds);
+
+  if (inactiveStudentsError) {
+    throw inactiveStudentsError;
+  }
+
+  (inactiveStudents || []).forEach(
+    studentData => {
+
+      const studentRow =
+        document.createElement("div");
+
+      studentRow.style.padding =
+        "8px";
+
+      studentRow.style.marginBottom =
+        "5px";
+
+      studentRow.style.background =
+        "#f5f5f5";
+
+      studentRow.style.borderRadius =
+        "6px";
+
+      studentRow.style.display =
+        "flex";
+
+      studentRow.style.justifyContent =
+        "space-between";
+
+      studentRow.style.alignItems =
+        "center";
+
+
+      const name =
+        document.createElement("span");
+
+      name.textContent =
+        studentData.display_name;
+
+
+      const addButton =
+        document.createElement("button");
+
+      addButton.textContent =
+        "ADD";
+
+      addButton.type =
+        "button";
+
+      addButton.className =
+        "secondary";
+
+
+      addButton.addEventListener(
+        "click",
+        function() {
+
+          const groupLists =
+  editGroupsContainer.querySelectorAll(
+    "[data-group-id]"
+  );
+
+if (groupLists.length === 0) {
+  return;
+}
+
+const groupNumber =
+  prompt(
+    "Add " +
+    studentData.display_name +
+    " to which group? Enter the group number."
+  );
+
+if (!groupNumber) {
+  return;
+}
+
+const selectedGroup =
+  Array.from(groupLists).find(
+    groupList => {
+
+      const groupBox =
+        groupList.parentElement;
+
+      const title =
+        groupBox.querySelector("strong");
+
+      return (
+        title &&
+        title.textContent.includes(
+          "Group " + groupNumber
+        )
+      );
+
+    }
+  );
+
+if (!selectedGroup) {
+  editGroupsMessage.textContent =
+    "That group could not be found.";
+
+  return;
+}
+
+const restoredStudent =
+  document.createElement("div");
+
+restoredStudent.textContent =
+  studentData.display_name;
+
+restoredStudent.draggable =
+  true;
+
+restoredStudent.dataset.studentId =
+  studentData.id;
+
+restoredStudent.style.padding =
+  "8px";
+
+restoredStudent.style.marginBottom =
+  "4px";
+
+restoredStudent.style.background =
+  "#f5f5f5";
+
+restoredStudent.style.borderRadius =
+  "6px";
+
+restoredStudent.style.cursor =
+  "grab";
+
+restoredStudent.addEventListener(
+  "dragstart",
+  function(event) {
+
+    event.dataTransfer.setData(
+      "text/plain",
+      studentData.id
+    );
+
+    event.dataTransfer.effectAllowed =
+      "move";
+  }
+);
+
+selectedGroup.appendChild(
+  restoredStudent
+);
+
+restoredStudent.dataset.restored =
+  "true";
+
+editGroupsMessage.textContent =
+  "Student added back. Click SAVE GROUPS to confirm.";
+
+
+        }
+      );
+
+
+      studentRow.appendChild(name);
+      studentRow.appendChild(addButton);
+
+      editGroupsStudentList.appendChild(
+        studentRow
+      );
+
+    }
+  );
+}
+
+
+  try {
+
+    const {
+      data: groups,
+      error
+    } =
+      await supabaseClient
+        .from("kb_groups")
+        .select(
+          "id, group_number, name"
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        )
+        .order(
+          "group_number",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    for (
+      const group of groups || []
+    ) {
+
+      const members =
+        await getGroupMembers(
+          group.id
+        );
+
+
+      const groupBox =
+        document.createElement(
+          "div"
+        );
+
+      groupBox.style.marginBottom =
+        "15px";
+
+      groupBox.style.padding =
+        "12px";
+
+      groupBox.style.border =
+        "1px solid #ddd";
+
+      groupBox.style.borderRadius =
+        "10px";
+
+
+      const title =
+        document.createElement(
+          "strong"
+        );
+
+      title.textContent =
+        group.name ||
+        "Group " +
+        group.group_number;
+
+
+      groupBox.appendChild(
+        title
+      );
+
+
+      const memberList =
+        document.createElement(
+          "div"
+        );
+
+      memberList.style.marginTop =
+        "8px";
+
+      memberList.style.minHeight =
+        "40px";
+
+      memberList.style.padding =
+        "6px";
+
+      memberList.dataset.groupId =
+        group.id;
+
+
+      members.forEach(
+        member => {
+
+          const student =
+            document.createElement(
+              "div"
+            );
+
+          student.textContent =
+            member.display_name;
+
+const removeButton =
+  document.createElement("button");
+
+removeButton.textContent = "✕";
+
+removeButton.type = "button";
+
+student.style.display = "flex";
+student.style.alignItems = "center";
+student.style.justifyContent = "space-between";
+
+removeButton.style.marginLeft = "10px";
+removeButton.style.cursor = "pointer";
+removeButton.style.flexShrink = "0";
+
+removeButton.addEventListener(
+  "click",
+  function(event) {
+
+    event.stopPropagation();
+
+    student.remove();
+
+  }
+);
+
+student.appendChild(removeButton);
+
+          student.draggable =
+            true;
+
+          student.dataset.studentId =
+            member.student_id;
+
+          student.style.padding =
+            "8px";
+
+          student.style.marginBottom =
+            "4px";
+
+          student.style.background =
+            "#f5f5f5";
+
+          student.style.borderRadius =
+            "6px";
+
+          student.style.cursor =
+            "grab";
+
+
+          student.addEventListener(
+            "dragstart",
+            function(event) {
+
+              event.dataTransfer.setData(
+                "text/plain",
+                member.student_id
+              );
+
+              event.dataTransfer.effectAllowed =
+                "move";
+            }
+          );
+
+
+          memberList.appendChild(
+            student
+          );
+        }
+      );
+
+
+      memberList.addEventListener(
+        "dragover",
+        function(event) {
+
+          event.preventDefault();
+
+          event.dataTransfer.dropEffect =
+            "move";
+        }
+      );
+
+
+      memberList.addEventListener(
+        "drop",
+        function(event) {
+
+          event.preventDefault();
+
+          const studentId =
+            event.dataTransfer.getData(
+              "text/plain"
+            );
+
+          const student =
+            document.querySelector(
+              '[data-student-id="' +
+              studentId +
+              '"]'
+            );
+
+          if (!student) {
+            return;
+          }
+
+          memberList.appendChild(
+            student
+          );
+        }
+      );
+
+
+      groupBox.appendChild(
+        memberList
+      );
+
+      editGroupsContainer.appendChild(
+        groupBox
+      );
+    }
+
+editGroupsModal.dataset.originalStudentIds =
+  JSON.stringify(
+    Array.from(
+      editGroupsContainer.querySelectorAll(
+        "[data-student-id]"
+      )
+    ).map(
+      student => student.dataset.studentId
+    )
+  );
+
+    editGroupsMessage.textContent =
+      "Drag students between groups. Changes are not saved yet.";
+
+  } catch (error) {
+
+    console.error(
+      "Could not load groups:",
+      error
+    );
+
+    editGroupsMessage.textContent =
+      "Could not load groups: " +
+      error.message;
+  }
+}
+
+async function saveEditedGroups() {
+
+  editGroupsMessage.textContent =
+    "Saving groups...";
+
+  saveEditGroupsButton.disabled =
+    true;
+
+  try {
+
+    const members = [];
+
+const originalStudentIds =
+  JSON.parse(
+    editGroupsModal.dataset.originalStudentIds || "[]"
+  );
+
+const currentStudentIds =
+  Array.from(
+    editGroupsContainer.querySelectorAll(
+      "[data-student-id]"
+    )
+  ).map(
+    student => student.dataset.studentId
+  );
+
+const restoredStudentIds =
+  Array.from(
+    editGroupsContainer.querySelectorAll(
+      '[data-student-id][data-restored="true"]'
+    )
+  ).map(
+    student => student.dataset.studentId
+  );
+
+const removedStudentIds =
+  originalStudentIds.filter(
+    studentId =>
+      !currentStudentIds.includes(studentId)
+  );
+
+    const groupLists =
+      editGroupsContainer.querySelectorAll(
+        "[data-group-id]"
+      );
+
+    groupLists.forEach(
+      groupList => {
+
+        const groupId =
+          groupList.dataset.groupId;
+
+        const students =
+          groupList.querySelectorAll(
+            "[data-student-id]"
+          );
+
+        students.forEach(
+          (student, index) => {
+
+            members.push({
+              student_id:
+                student.dataset.studentId,
+
+              group_id:
+                groupId,
+
+              position:
+                index + 1
+            });
+
+          }
+        );
+
+      }
+    );
+
+for (
+  const studentId of restoredStudentIds
+) {
+
+  const restoredStudent =
+    editGroupsContainer.querySelector(
+      '[data-student-id="' +
+      studentId +
+      '"]'
+    );
+
+  if (!restoredStudent) {
+    continue;
+  }
+
+  const groupList =
+    restoredStudent.closest(
+      "[data-group-id]"
+    );
+
+  if (!groupList) {
+    continue;
+  }
+
+  const position =
+    Array.from(
+      groupList.querySelectorAll(
+        "[data-student-id]"
+      )
+    ).indexOf(
+      restoredStudent
+    ) + 1;
+
+  const { error: restoreError } =
+    await supabaseClient.rpc(
+      "kb_restore_group_member",
+      {
+        p_session_id:
+          currentSessionId,
+
+        p_student_id:
+          studentId,
+
+        p_group_id:
+          groupList.dataset.groupId,
+
+        p_position:
+          position
+      }
+    );
+
+  if (restoreError) {
+    throw restoreError;
+  }
+}
+
+    const { error } =
+  await supabaseClient.rpc(
+    "kb_save_group_members",
+    {
+      p_session_id:
+        currentSessionId,
+
+      p_members:
+        members,
+
+      p_removed_student_ids:
+        removedStudentIds
+    }
+  );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    editGroupsMessage.textContent =
+      "Groups saved successfully.";
+
+    editGroupsModal.classList.add(
+      "hidden"
+    );
+
+
+    await loadActivity();
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not save groups:",
+      error
+    );
+
+    editGroupsMessage.textContent =
+      "Could not save groups: " +
+      error.message;
+
+  } finally {
+
+    saveEditGroupsButton.disabled =
+      false;
+
+  }
+}
+
+  // =========================================================
+  // UPDATE GROUP CARD
+  // =========================================================
+
+  async function updateGroupCard(
+    group
+  ) {
+
+    const card =
+      groupCards.get(
+        group.id
+      );
+
+
+    if (!card) {
+      return;
+    }
+
+
+    try {
+
+      const {
+        data: groupState,
+        error: stateError
+      } =
+        await supabaseClient
+          .from("kb_group_sessions")
+          .select(
+            "current_round, status"
+          )
+          .eq(
+            "session_id",
+            currentSessionId
+          )
+          .eq(
+            "group_id",
+            group.id
+          )
+          .single();
+
+
+      if (stateError) {
+        throw stateError;
+      }
+
+
+      const currentRound =
+        Number(
+          groupState.current_round || 0
+        );
+
+
+      const members =
+        await getGroupMembers(
+          group.id
+        );
+
+
+      const total =
+        members.length;
+
+
+      let submitted = 0;
+
+
+      if (
+        currentRound === 0
+      ) {
+
+        const {
+          data: ideas,
+          error: ideaError
+        } =
+          await supabaseClient
+            .from("kb_ideas")
+            .select(
+              "student_id, submitted_at"
+            )
+            .eq(
+              "session_id",
+              currentSessionId
+            )
+            .eq(
+              "group_id",
+              group.id
+            );
+
+
+        if (ideaError) {
+          throw ideaError;
+        }
+
+
+        const submittedStudentIds =
+          new Set(
+            (ideas || [])
+              .filter(
+                idea =>
+                  idea.submitted_at !== null
+              )
+              .map(
+                idea =>
+                  idea.student_id
+              )
+          );
+
+
+        submitted =
+          members.filter(
+            member =>
+              submittedStudentIds.has(
+                member.student_id
+              )
+          ).length;
+
+      } else {
+
+        const roundId =
+          await getRoundId(
+            currentRound
+          );
+
+
+        if (roundId) {
+
+          const {
+            data: assignments,
+            error: assignmentError
+          } =
+            await supabaseClient
+              .from("kb_assignments")
+              .select(
+                "id, responder_student_id"
+              )
+              .eq(
+                "session_id",
+                currentSessionId
+              )
+              .eq(
+                "group_id",
+                group.id
+              )
+              .eq(
+                "round_id",
+                roundId
+              );
+
+
+          if (assignmentError) {
+            throw assignmentError;
+          }
+
+
+          const assignmentIds =
+            (assignments || []).map(
+              assignment =>
+                assignment.id
+            );
+
+
+          if (
+            assignmentIds.length > 0
+          ) {
+
+            const {
+              data: responses,
+              error: responseError
+            } =
+              await supabaseClient
+                .from("kb_responses")
+                .select(
+                  "assignment_id, submitted_at"
+                )
+                .in(
+                  "assignment_id",
+                  assignmentIds
+                );
+
+
+            if (responseError) {
+              throw responseError;
+            }
+
+
+            const submittedAssignmentIds =
+              new Set(
+                (responses || [])
+                  .filter(
+                    response =>
+                      response.submitted_at !== null
+                  )
+                  .map(
+                    response =>
+                      response.assignment_id
+                  )
+              );
+
+
+            const memberIdSet =
+              new Set(
+                members.map(
+                  member =>
+                    member.student_id
+                )
+              );
+
+
+            submitted =
+              (assignments || [])
+                .filter(
+                  assignment =>
+                    memberIdSet.has(
+                      assignment.responder_student_id
+                    ) &&
+                    submittedAssignmentIds.has(
+                      assignment.id
+                    )
+                )
+                .length;
+          }
+        }
+      }
+
+
+      submitted =
+        Math.min(
+          submitted,
+          total
+        );
+
+
+      const percentage =
+        total === 0
+          ? 0
+          : Math.round(
+              (
+                submitted /
+                total
+              ) * 100
+            );
+
+
+      const status =
+        groupState.status;
+
+
+      let statusText =
+        status.toUpperCase();
+
+
+      if (
+        status === "ready"
+      ) {
+
+        statusText =
+          "READY TO ROTATE";
+
+      } else if (
+        status === "working"
+      ) {
+
+        statusText =
+          "WORKING";
+
+      } else if (
+        status === "waiting"
+      ) {
+
+        statusText =
+          "WAITING";
+
+      } else if (
+        status === "consolidating"
+      ) {
+
+        statusText =
+          "CONSOLIDATING";
+
+      } else if (
+        status === "complete"
+      ) {
+
+        statusText =
+          "COMPLETE";
+      }
+
+
+      card.className =
+        "group-card " +
+        status;
+
+
+      card.dataset.groupId =
+        group.id;
+
+
+      const statusElement =
+        card.querySelector(
+          ".status-display"
+        );
+
+      statusElement.className =
+        "status status-display " +
+        status;
+
+      statusElement.textContent =
+        statusText;
+
+
+      const countElement =
+        card.querySelector(
+          ".count-display"
+        );
+
+      countElement.textContent =
+        submitted +
+        " / " +
+        total;
+
+
+      const progressElement =
+        card.querySelector(
+          ".progress-display"
+        );
+
+      progressElement.style.width =
+        percentage +
+        "%";
+
+
+      const roundElement =
+        card.querySelector(
+          ".round-display"
+        );
+
+      roundElement.textContent =
+        currentRound;
+
+
+      const descriptionElement =
+        card.querySelector(
+          ".round-description"
+        );
+
+
+      if (
+        status === "consolidating"
+      ) {
+
+        descriptionElement.textContent =
+          "Group consolidation";
+
+      } else if (
+        status === "complete"
+      ) {
+
+        descriptionElement.textContent =
+          "Consolidation complete";
+
+      } else {
+
+        descriptionElement.textContent =
+          currentRound === 0
+            ? "Original ideas"
+            : "Peer response";
+      }
+
+
+      const rotateButton =
+        card.querySelector(
+          ".rotate-button"
+        );
+
+
+      if (
+        status === "ready"
+      ) {
+
+        rotateButton.disabled =
+          false;
+
+        rotateButton.textContent =
+          "ROTATE GROUP";
+
+      } else {
+
+        rotateButton.disabled =
+          true;
+
+        rotateButton.textContent =
+          status === "consolidating"
+            ? "CONSOLIDATING"
+            : status === "complete"
+              ? "COMPLETE"
+              : "WAITING";
+      }
+
+
+      const consolidateButton =
+        card.querySelector(
+          ".consolidate-button"
+        );
+
+
+      const consolidationNote =
+        card.querySelector(
+          ".consolidation-note"
+        );
+
+
+      if (
+        status === "ready"
+      ) {
+
+        consolidateButton.disabled =
+          false;
+
+        consolidateButton.textContent =
+          "🧠 START CONSOLIDATION";
+
+        consolidationNote.classList.add(
+          "hidden"
+        );
+
+      } else if (
+        status === "consolidating"
+      ) {
+
+        consolidateButton.disabled =
+          true;
+
+        consolidateButton.textContent =
+          "🧠 CONSOLIDATING";
+
+        consolidationNote.classList.remove(
+          "hidden"
+        );
+
+      } else if (
+        status === "complete"
+      ) {
+
+        consolidateButton.disabled =
+          true;
+
+        consolidateButton.textContent =
+          "✓ CONSOLIDATION COMPLETE";
+
+        consolidationNote.classList.remove(
+          "hidden"
+        );
+
+      } else {
+
+        consolidateButton.disabled =
+          true;
+
+        consolidateButton.textContent =
+          "START CONSOLIDATION";
+
+        consolidationNote.classList.add(
+          "hidden"
+        );
+      }
+
+
+      updateMemberNames(
+        card,
+        members
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Could not update group:",
+        group.id,
+        error
+      );
+
+
+      const countElement =
+        card.querySelector(
+          ".count-display"
+        );
+
+
+      if (countElement) {
+
+        countElement.textContent =
+          "— / —";
+      }
+
+
+      const memberContainer =
+        card.querySelector(
+          ".members-display"
+        );
+
+
+      if (memberContainer) {
+
+        memberContainer.innerHTML =
+          "<div class='member'>" +
+          "Could not load roster." +
+          "</div>";
+      }
+    }
+  }
+
+
+  // =========================================================
+  // MEMBER NAMES
+  // =========================================================
+
+  function updateMemberNames(
+    card,
+    members
+  ) {
+
+    const memberContainer =
+      card.querySelector(
+        ".members-display"
+      );
+
+
+    if (!memberContainer) {
+      return;
+    }
+
+
+    if (
+      members.length === 0
+    ) {
+
+      memberContainer.innerHTML =
+        "<div class='member'>" +
+        "No members found." +
+        "</div>";
+
+      return;
+    }
+
+
+    const names =
+      members.map(
+        member =>
+          member.display_name
+      );
+
+
+    const existingNames =
+      Array.from(
+        memberContainer.querySelectorAll(
+          ".member"
+        )
+      ).map(
+        element =>
+          element.textContent
+      );
+
+
+    if (
+      JSON.stringify(existingNames) ===
+      JSON.stringify(names)
+    ) {
+
+      return;
+    }
+
+
+    memberContainer.innerHTML =
+      "";
+
+
+    names.forEach(
+      name => {
+
+        const div =
+          document.createElement(
+            "div"
+          );
+
+        div.className =
+          "member";
+
+        div.textContent =
+          name;
+
+        memberContainer.appendChild(
+          div
+        );
+      }
+    );
+  }
+
+
+  // =========================================================
+  // GET ROUND ID
+  // =========================================================
+
+  async function getRoundId(
+    roundNumber
+  ) {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("kb_rounds")
+        .select(
+          "id"
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        )
+        .eq(
+          "round_number",
+          roundNumber
+        )
+        .maybeSingle();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    return data
+      ? data.id
+      : null;
+  }
+
+
+  // =========================================================
+  // LOAD CONSOLIDATION
+  // =========================================================
+
+  async function loadTeacherConsolidation(
+    groupId
+  ) {
+
+    teacherConsolidationStatus.textContent =
+      "Loading...";
+
+    teacherConsolidationContent.innerHTML =
+      `
+        <span class="consolidation-empty">
+          Loading group consolidation...
+        </span>
+      `;
+
+    teacherConsolidationUpdated.textContent =
+      "";
+
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from("kb_consolidations")
+        .select(
+          "content, draft_content, updated_at, submitted_at"
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        )
+        .eq(
+          "group_id",
+          groupId
+        )
+        .maybeSingle();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    if (!data) {
+
+      teacherConsolidationStatus.textContent =
+        "NOT STARTED";
+
+      teacherConsolidationContent.innerHTML =
+        `
+          <span class="consolidation-empty">
+            The group has not started a consolidation yet.
+          </span>
+        `;
+
+      return;
+    }
+
+
+    if (
+      data.submitted_at &&
+      data.content &&
+      data.content.trim()
+    ) {
+
+      teacherConsolidationStatus.textContent =
+        "SUBMITTED";
+
+      teacherConsolidationContent.textContent =
+        data.content;
+
+      teacherConsolidationUpdated.textContent =
+        "Submitted " +
+        formatDateTime(
+          data.submitted_at
+        );
+
+      return;
+    }
+
+
+    if (
+      data.draft_content &&
+      data.draft_content.trim()
+    ) {
+
+      teacherConsolidationStatus.textContent =
+        "DRAFT";
+
+      teacherConsolidationContent.textContent =
+        data.draft_content;
+
+      teacherConsolidationUpdated.textContent =
+        data.updated_at
+          ? "Last updated " +
+            formatDateTime(
+              data.updated_at
+            )
+          : "";
+
+      return;
+    }
+
+
+    teacherConsolidationStatus.textContent =
+      "STARTED";
+
+    teacherConsolidationContent.innerHTML =
+      `
+        <span class="consolidation-empty">
+          The group has started consolidation,
+          but no consolidation text has been saved yet.
+        </span>
+      `;
+
+    teacherConsolidationUpdated.textContent =
+      data.updated_at
+        ? "Last updated " +
+          formatDateTime(
+            data.updated_at
+          )
+        : "";
+  }
+
+
+  // =========================================================
+  // FORMAT DATE/TIME
+  // =========================================================
+
+  function formatDateTime(
+    value
+  ) {
+
+    if (!value) {
+      return "";
+    }
+
+    const date =
+      new Date(value);
+
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+
+      return "";
+    }
+
+
+    return date.toLocaleString(
+      undefined,
+      {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }
+    );
+  }
+
+
+  // =========================================================
+  // VIEW GROUP
+  // =========================================================
+
+  async function openGroupView(
+    groupId
+  ) {
+
+    if (!currentSessionId) {
+      return;
+    }
+
+
+    const card =
+      groupCards.get(
+        groupId
+      );
+
+
+    const groupName =
+      card
+        ? card.querySelector(
+            ".group-title"
+          )?.textContent.trim()
+        : "Group";
+
+
+    groupModalTitle.textContent =
+      groupName;
+
+    groupModal.dataset.groupId =
+                 groupId;
+
+
+    groupModalSubtitle.textContent =
+      "Loading original ideas, building responses and consolidation...";
+
+
+    knowledgeGrid.innerHTML =
+      `
+        <div class="loading-message">
+          Loading group knowledge...
+        </div>
+      `;
+
+
+    teacherConsolidationStatus.textContent =
+      "Loading...";
+
+    teacherConsolidationContent.innerHTML =
+      `
+        <span class="consolidation-empty">
+          Loading consolidation...
+        </span>
+      `;
+
+    teacherConsolidationUpdated.textContent =
+      "";
+
+    moveOnWithoutWaitingButton.disabled =
+                 true;
+
+    groupModal.classList.remove(
+      "hidden"
+    );
+
+
+    document.body.style.overflow =
+      "hidden";
+
+
+    try {
+
+      const members =
+  await getGroupMembers(
+    groupId
+  );
+
+const {
+  data: groupState,
+  error: groupStateError
+} =
+  await supabaseClient
+    .from("kb_group_sessions")
+    .select("status")
+    .eq(
+      "session_id",
+      currentSessionId
+    )
+    .eq(
+      "group_id",
+      groupId
+    )
+    .single();
+
+if (groupStateError) {
+  throw groupStateError;
+}
+
+moveOnWithoutWaitingButton.disabled =
+  groupState.status !== "working";
+
+
+      const {
+        data: ideas,
+        error: ideaError
+      } =
+        await supabaseClient
+          .from("kb_ideas")
+          .select(
+            "student_id, content, submitted_at, updated_at"
+          )
+          .eq(
+            "session_id",
+            currentSessionId
+          )
+          .eq(
+            "group_id",
+            groupId
+          );
+
+
+      if (ideaError) {
+        throw ideaError;
+      }
+
+
+      const {
+        data: assignments,
+        error: assignmentError
+      } =
+        await supabaseClient
+          .from("kb_assignments")
+          .select(
+            "id, round_id, responder_student_id, target_student_id, instruction_code"
+          )
+          .eq(
+            "session_id",
+            currentSessionId
+          )
+          .eq(
+            "group_id",
+            groupId
+          )
+          .order(
+            "created_at",
+            {
+              ascending: true
+            }
+          );
+
+
+      if (assignmentError) {
+        throw assignmentError;
+      }
+
+
+      const {
+        data: rounds,
+        error: roundsError
+      } =
+        await supabaseClient
+          .from("kb_rounds")
+          .select(
+            "id, round_number"
+          )
+          .eq(
+            "session_id",
+            currentSessionId
+          );
+
+
+      if (roundsError) {
+        throw roundsError;
+      }
+
+
+      const roundMap =
+        new Map(
+          (rounds || []).map(
+            round => [
+              round.id,
+              round.round_number
+            ]
+          )
+        );
+
+
+      const assignmentIds =
+        (assignments || []).map(
+          assignment =>
+            assignment.id
+        );
+
+
+      let responses = [];
+
+
+      if (
+        assignmentIds.length > 0
+      ) {
+
+        const {
+          data: responseRows,
+          error: responseError
+        } =
+          await supabaseClient
+            .from("kb_responses")
+            .select(
+              "assignment_id, responder_student_id, target_student_id, instruction_code, content, submitted_at"
+            )
+            .in(
+              "assignment_id",
+              assignmentIds
+            );
+
+
+        if (responseError) {
+          throw responseError;
+        }
+
+
+        responses =
+          responseRows || [];
+      }
+
+
+      const nameMap =
+        new Map(
+          members.map(
+            member => [
+              member.student_id,
+              member.display_name
+            ]
+          )
+        );
+
+
+      const ideaMap =
+        new Map(
+          (ideas || []).map(
+            idea => [
+              idea.student_id,
+              idea
+            ]
+          )
+        );
+
+
+      const assignmentMap =
+        new Map(
+          (assignments || []).map(
+            assignment => [
+              assignment.id,
+              assignment
+            ]
+          )
+        );
+
+
+      const responsesByTarget =
+        new Map();
+
+
+      responses.forEach(
+        response => {
+
+          const assignment =
+            assignmentMap.get(
+              response.assignment_id
+            );
+
+
+          if (!assignment) {
+            return;
+          }
+
+
+          const targetId =
+            assignment.target_student_id;
+
+
+          if (
+            !responsesByTarget.has(
+              targetId
+            )
+          ) {
+
+            responsesByTarget.set(
+              targetId,
+              []
+            );
+          }
+
+
+          responsesByTarget
+            .get(targetId)
+            .push({
+
+              ...response,
+
+              round_number:
+                roundMap.get(
+                  assignment.round_id
+                ) || "?",
+
+              responder_student_id:
+                assignment.responder_student_id,
+
+              target_student_id:
+                assignment.target_student_id,
+
+              instruction_code:
+                assignment.instruction_code
+            });
+        }
+      );
+
+
+      responsesByTarget.forEach(
+        responseList => {
+
+          responseList.sort(
+            (a, b) => {
+
+              const roundDifference =
+                Number(
+                  a.round_number || 0
+                ) -
+                Number(
+                  b.round_number || 0
+                );
+
+
+              if (
+                roundDifference !== 0
+              ) {
+
+                return roundDifference;
+              }
+
+
+              return String(
+                a.submitted_at || ""
+              ).localeCompare(
+                String(
+                  b.submitted_at || ""
+                )
+              );
+            }
+          );
+        }
+      );
+
+
+      knowledgeGrid.innerHTML =
+        "";
+
+
+      if (
+        members.length === 0
+      ) {
+
+        knowledgeGrid.innerHTML =
+          `
+            <div class="loading-message">
+              No group members found.
+            </div>
+          `;
+
+        groupModalSubtitle.textContent =
+          "No members found.";
+
+        await loadTeacherConsolidation(
+          groupId
+        );
+
+        return;
+      }
+
+
+      members.forEach(
+        member => {
+
+          const column =
+            document.createElement(
+              "div"
+            );
+
+
+          column.className =
+            "knowledge-column";
+
+
+          const header =
+            document.createElement(
+              "div"
+            );
+
+
+          header.className =
+            "knowledge-column-header";
+
+
+          header.textContent =
+            member.display_name;
+
+
+          column.appendChild(
+            header
+          );
+
+
+          const body =
+            document.createElement(
+              "div"
+            );
+
+
+          body.className =
+            "knowledge-column-body";
+
+
+          const ideaLabel =
+            document.createElement(
+              "div"
+            );
+
+
+          ideaLabel.className =
+            "idea-label";
+
+
+          ideaLabel.textContent =
+            "Original idea";
+
+
+          body.appendChild(
+            ideaLabel
+          );
+
+
+          const idea =
+            ideaMap.get(
+              member.student_id
+            );
+
+
+          const ideaBox =
+            document.createElement(
+              "div"
+            );
+
+
+          ideaBox.className =
+            "original-idea";
+
+
+          if (
+            idea &&
+            idea.content &&
+            idea.content.trim()
+          ) {
+
+            ideaBox.textContent =
+              idea.content;
+
+          } else {
+
+            ideaBox.innerHTML =
+              `
+                <span class="no-content">
+                  No submitted idea
+                </span>
+              `;
+          }
+
+
+          body.appendChild(
+            ideaBox
+          );
+
+
+          const responseList =
+            responsesByTarget.get(
+              member.student_id
+            ) || [];
+
+
+          if (
+            responseList.length > 0
+          ) {
+
+            const responseLabel =
+              document.createElement(
+                "div"
+              );
+
+
+            responseLabel.className =
+              "idea-label";
+
+
+            responseLabel.textContent =
+              "Building responses";
+
+
+            body.appendChild(
+              responseLabel
+            );
+
+
+            responseList.forEach(
+              response => {
+
+                const responseCard =
+                  document.createElement(
+                    "div"
+                  );
+
+
+                const code =
+                  response.instruction_code;
+
+
+                if (
+                  code === "+"
+                ) {
+
+                  responseCard.className =
+                    "response-card response-add";
+
+                } else if (
+                  code === "-"
+                ) {
+
+                  responseCard.className =
+                    "response-card response-disagree";
+
+                } else {
+
+                  responseCard.className =
+                    "response-card response-question";
+                }
+
+
+                const responseHeader =
+                  document.createElement(
+                    "div"
+                  );
+
+
+                responseHeader.className =
+                  "response-header";
+
+
+                const symbol =
+                  document.createElement(
+                    "span"
+                  );
+
+
+                symbol.className =
+                  "response-symbol";
+
+
+                symbol.textContent =
+                  code === "+"
+                    ? "+ Add on"
+                    : code === "-"
+                      ? "− Disagree"
+                      : "? Question";
+
+
+                const meta =
+                  document.createElement(
+                    "span"
+                  );
+
+
+                meta.className =
+                  "response-meta";
+
+
+                meta.textContent =
+                  "Round " +
+                  (
+                    response.round_number ||
+                    "?"
+                  );
+
+
+                responseHeader.appendChild(
+                  symbol
+                );
+
+                responseHeader.appendChild(
+                  meta
+                );
+
+                responseCard.appendChild(
+                  responseHeader
+                );
+
+
+                const author =
+                  document.createElement(
+                    "div"
+                  );
+
+
+                author.className =
+                  "response-author";
+
+
+                author.textContent =
+                  nameMap.get(
+                    response.responder_student_id
+                  ) ||
+                  "Student";
+
+
+                responseCard.appendChild(
+                  author
+                );
+
+
+                const text =
+                  document.createElement(
+                    "div"
+                  );
+
+
+                if (
+                  response.content &&
+                  response.content.trim()
+                ) {
+
+                  text.textContent =
+                    response.content;
+
+                } else {
+
+                  text.innerHTML =
+                    `
+                      <span class="no-content">
+                        No response submitted
+                      </span>
+                    `;
+                }
+
+
+                responseCard.appendChild(
+                  text
+                );
+
+
+                body.appendChild(
+                  responseCard
+                );
+              }
+            );
+          }
+
+
+          column.appendChild(
+            body
+          );
+
+
+          knowledgeGrid.appendChild(
+            column
+          );
+        }
+      );
+
+
+      await loadTeacherConsolidation(
+        groupId
+      );
+
+
+      const submittedIdeas =
+        (ideas || []).filter(
+          idea =>
+            idea.content &&
+            idea.content.trim()
+        ).length;
+
+
+      groupModalSubtitle.textContent =
+        members.length +
+        " students · " +
+        submittedIdeas +
+        " original ideas · " +
+        responses.length +
+        " building responses";
+
+
+    } catch (error) {
+
+      console.error(
+        "Could not load group view:",
+        error
+      );
+
+
+      knowledgeGrid.innerHTML =
+        `
+          <div class="loading-message">
+            Could not load this group's knowledge.
+            <br><br>
+            ${escapeHtml(
+              error.message
+            )}
+          </div>
+        `;
+
+
+      teacherConsolidationStatus.textContent =
+        "ERROR";
+
+
+      teacherConsolidationContent.innerHTML =
+        `
+          <span class="consolidation-empty">
+            Could not load the consolidation.
+          </span>
+        `;
+
+
+      groupModalSubtitle.textContent =
+        "Could not load group knowledge.";
+    }
+  }
+
+async function handleMoveOnWithoutWaiting() {
+
+  if (!currentSessionId) {
+    return;
+  }
+
+  const groupId =
+    groupModal.dataset.groupId;
+
+  if (!groupId) {
+    alert("Could not identify this group.");
+    return;
+  }
+
+  try {
+
+    const members =
+      await getGroupMembers(
+        groupId
+      );
+
+    if (!members || members.length === 0) {
+      alert("No students found in this group.");
+      return;
+    }
+
+    const studentNames =
+      members
+        .map(
+          (member, index) =>
+            (index + 1) +
+            ". " +
+            member.display_name
+        )
+        .join("\n");
+
+    const choice =
+      prompt(
+        "Select the absent student by number:\n\n" +
+        studentNames
+      );
+
+    if (!choice) {
+      return;
+    }
+
+    const index =
+      Number(choice) - 1;
+
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= members.length
+    ) {
+      alert("Invalid student selection.");
+      return;
+    }
+
+    const selectedStudent =
+      members[index];
+
+    const confirmed =
+      confirm(
+        "Mark " +
+        selectedStudent.display_name +
+        " as skipped for this round?\n\n" +
+        "Their existing work will not be deleted."
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    moveOnWithoutWaitingButton.disabled =
+      true;
+
+    moveOnWithoutWaitingButton.textContent =
+      "MOVING ON...";
+
+    const { error } =
+      await supabaseClient.rpc(
+        "kb_move_on_without_waiting",
+        {
+          p_session_id:
+            currentSessionId,
+
+          p_group_id:
+            groupId,
+
+          p_student_id:
+            selectedStudent.student_id
+        }
+      );
+
+    if (error) {
+      throw error;
+    }
+
+    moveOnWithoutWaitingButton.textContent =
+      "✓ MOVED ON";
+
+    setTimeout(
+      function() {
+
+        moveOnWithoutWaitingButton.textContent =
+          "⏭ MOVE ON WITHOUT WAITING";
+
+        moveOnWithoutWaitingButton.disabled =
+          false;
+
+      },
+      1500
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Could not move on without waiting:",
+      error
+    );
+
+    alert(
+      "Could not move on without waiting:\n\n" +
+      error.message
+    );
+
+    moveOnWithoutWaitingButton.textContent =
+      "⏭ MOVE ON WITHOUT WAITING";
+
+    moveOnWithoutWaitingButton.disabled =
+      false;
+  }
+}
+  // =========================================================
+  // CLOSE GROUP MODAL
+  // =========================================================
+
+  function closeGroupView() {
+
+    groupModal.classList.add(
+      "hidden"
+    );
+
+    document.body.style.overflow =
+      "";
+  }
+
+
+  closeGroupModal.addEventListener(
+    "click",
+    closeGroupView
+  );
+
+
+  closeGroupModalFooter.addEventListener(
+    "click",
+    closeGroupView
+  );
+
+
+  groupModal.addEventListener(
+    "click",
+    function(event) {
+
+      if (
+        event.target === groupModal
+      ) {
+
+        closeGroupView();
+      }
+    }
+  );
+
+
+  document.addEventListener(
+    "keydown",
+    function(event) {
+
+      if (
+        event.key === "Escape"
+      ) {
+
+        if (
+          !groupModal.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          closeGroupView();
+
+        } else if (
+          !activityModal.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          closeActivityCreationModal();
+
+        } else if (
+          !classModal.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          closeClassCreationModal();
+
+        } else if (
+          !rosterModal.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          closeRoster();
+
+        } else if (
+          !codeResultModal.classList.contains(
+            "hidden"
+          )
+        ) {
+
+          closeCodeResultModal();
+        }
+      }
+    }
+  );
+
+
+  // =========================================================
+  // ROTATE GROUP
+  // =========================================================
+
+  async function rotateGroup(
+    groupId
+  ) {
+
+    if (
+      !currentSessionId ||
+      !groupId
+    ) {
+
+      alert(
+        "No activity or group selected."
+      );
+
+      return;
+    }
+
+
+    const card =
+      groupCards.get(
+        groupId
+      );
+
+
+    const button =
+      card
+        ? card.querySelector(
+            ".rotate-button"
+          )
+        : null;
+
+
+    if (button) {
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        "ROTATING...";
+    }
+
+
+    try {
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.rpc(
+          "kb_rotate_group",
+          {
+            p_session_id:
+              currentSessionId,
+
+            p_group_id:
+              groupId
+          }
+        );
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      if (
+        !data ||
+        data.success !== true
+      ) {
+
+        throw new Error(
+          data?.error ||
+          "Rotation failed."
+        );
+      }
+
+
+      await loadDashboard(
+        false
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Rotation error:",
+        error
+      );
+
+
+      alert(
+        "Could not rotate this group.\n\n" +
+        error.message
+      );
+
+
+      await loadDashboard(
+        false
+      );
+    }
+  }
+
+
+  // =========================================================
+  // START CONSOLIDATION
+  // =========================================================
+
+  async function startConsolidation(
+    groupId
+  ) {
+
+    if (
+      !currentSessionId ||
+      !groupId
+    ) {
+
+      alert(
+        "No activity or group selected."
+      );
+
+      return;
+    }
+
+
+    const card =
+      groupCards.get(
+        groupId
+      );
+
+
+    const button =
+      card
+        ? card.querySelector(
+            ".consolidate-button"
+          )
+        : null;
+
+
+    const groupTitle =
+      card
+        ? card.querySelector(
+            ".group-title"
+          )?.textContent ||
+          "this group"
+        : "this group";
+
+
+    const confirmed =
+      confirm(
+        "Start consolidation for " +
+        groupTitle.trim() +
+        "?\n\n" +
+        "All students in this group will be able " +
+        "to see the group's original ideas and " +
+        "building responses."
+      );
+
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    if (button) {
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        "STARTING...";
+    }
+
+
+    try {
+
+      const {
+        data: groupState,
+        error: stateError
+      } =
+        await supabaseClient
+          .from("kb_group_sessions")
+          .select(
+            "status"
+          )
+          .eq(
+            "session_id",
+            currentSessionId
+          )
+          .eq(
+            "group_id",
+            groupId
+          )
+          .single();
+
+
+      if (stateError) {
+        throw stateError;
+      }
+
+
+      if (
+        groupState.status !== "ready"
+      ) {
+
+        throw new Error(
+          "This group is no longer ready to start consolidation. " +
+          "Its current status is: " +
+          groupState.status
+        );
+      }
+
+
+      const {
+        error: updateError
+      } =
+        await supabaseClient
+          .from("kb_group_sessions")
+          .update({
+            status:
+              "consolidating",
+
+            updated_at:
+              new Date().toISOString()
+          })
+          .eq(
+            "session_id",
+            currentSessionId
+          )
+          .eq(
+            "group_id",
+            groupId
+          );
+
+
+      if (updateError) {
+        throw updateError;
+      }
+
+
+      await loadDashboard(
+        false
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Start consolidation error:",
+        error
+      );
+
+
+      alert(
+        "Could not start consolidation.\n\n" +
+        error.message
+      );
+
+
+      await loadDashboard(
+        false
+      );
+    }
+  }
+
+
+  // =========================================================
+  // PAUSE ALL
+  // =========================================================
+
+  pauseButton.addEventListener(
+    "click",
+    async function() {
+
+      if (!currentSessionId) {
+        return;
+      }
+
+
+      pauseButton.disabled =
+        true;
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("kb_sessions")
+          .update({
+            is_paused:
+              true
+          })
+          .eq(
+            "id",
+            currentSessionId
+          );
+
+
+      if (error) {
+
+        pauseButton.disabled =
+          false;
+
+        alert(
+          "Could not pause activity:\n\n" +
+          error.message
+        );
+
+        return;
+      }
+
+
+      await loadDashboard(
+        false
+      );
+    }
+  );
+
+
+  // =========================================================
+  // CONTINUE
+  // =========================================================
+
+  continueButton.addEventListener(
+    "click",
+    async function() {
+
+      if (!currentSessionId) {
+        return;
+      }
+
+
+      continueButton.disabled =
+        true;
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("kb_sessions")
+          .update({
+            is_paused:
+              false
+          })
+          .eq(
+            "id",
+            currentSessionId
+          );
+
+
+      if (error) {
+
+        continueButton.disabled =
+          false;
+
+        alert(
+          "Could not continue activity:\n\n" +
+          error.message
+        );
+
+        return;
+      }
+
+
+      await loadDashboard(
+        false
+      );
+    }
+  );
+
+
+  // =========================================================
+  // AUTO REFRESH
+  // =========================================================
+
+  function startDashboardAutoRefresh() {
+
+    stopDashboardAutoRefresh();
+
+
+    dashboardRefreshTimer =
+      setInterval(
+        async function() {
+
+          if (
+            currentSessionId &&
+            !document.hidden &&
+            groupModal.classList.contains(
+              "hidden"
+            ) &&
+            activityModal.classList.contains(
+              "hidden"
+            )
+          ) {
+
+            await loadDashboard(
+              false
+            );
+          }
+
+        },
+        10000
+      );
+  }
+
+
+  function stopDashboardAutoRefresh() {
+
+    if (
+      dashboardRefreshTimer
+    ) {
+
+      clearInterval(
+        dashboardRefreshTimer
+      );
+
+      dashboardRefreshTimer =
+        null;
+    }
+  }
+
+
+  // =========================================================
+  // LOG OUT
+  // =========================================================
+
+  logoutButton.addEventListener(
+    "click",
+    async function() {
+
+      logoutButton.disabled =
+        true;
+
+
+      stopDashboardAutoRefresh();
+
+      closeGroupView();
+
+      closeActivityCreationModal();
+
+      closeClassCreationModal();
+
+      closeRoster();
+
+      closeCodeResultModal();
+
+
+      const {
+        error
+      } =
+        await supabaseClient.auth.signOut();
+
+
+      if (error) {
+
+        logoutButton.disabled =
+          false;
+
+        alert(
+          "Could not log out:\n\n" +
+          error.message
+        );
+
+        return;
+      }
+
+
+      currentTeacherId =
+        null;
+
+      currentClassId =
+        null;
+
+      currentSessionId =
+        null;
+
+      currentClassStudents =
+        [];
+
+      groupCards.clear();
+
+      groupsContainer.innerHTML =
+        "";
+
+
+      sessionCard.classList.add(
+        "hidden"
+      );
+
+      groupsCard.classList.add(
+        "hidden"
+      );
+
+      dashboard.classList.add(
+        "hidden"
+      );
+
+      loginCard.classList.remove(
+        "hidden"
+      );
+
+
+      emailInput.value =
+        "";
+
+      passwordInput.value =
+        "";
+
+
+      classSelect.innerHTML =
+        "<option value=''>" +
+        "Choose a class..." +
+        "</option>";
+
+      sessionSelect.innerHTML =
+        "<option value=''>" +
+        "Choose an activity..." +
+        "</option>";
+
+
+      logoutButton.disabled =
+        false;
+    }
+  );
+
+
+  // =========================================================
+  // MANUAL REFRESH
+  // =========================================================
+
+  refreshButton.addEventListener(
+    "click",
+    async function() {
+
+      refreshButton.disabled =
+        true;
+
+
+      try {
+
+        if (currentClassId) {
+
+          await loadSelectedClass();
+
+        } else {
+
+          await loadClasses();
+        }
+
+
+        if (currentSessionId) {
+
+          sessionSelect.value =
+            currentSessionId;
+
+          await loadDashboard(
+            true
+          );
+        }
+
+      } finally {
+
+        refreshButton.disabled =
+          false;
+      }
+    }
+  );
+
+
+  // =========================================================
+  // CHECK EXISTING LOGIN
+  // =========================================================
+
+  async function checkExistingLogin() {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (error) {
+
+      console.error(
+        "Session check error:",
+        error
+      );
+
+      return;
+    }
+
+
+    if (
+      data.session
+    ) {
+
+      await showDashboard();
+    }
+  }
+
+
+  checkExistingLogin();
+
+
+  // =========================================================
+  // ESCAPE HTML
+  // =========================================================
+
+  function escapeHtml(
+    value
+  ) {
+
+    return String(value)
+      .replaceAll(
+        "&",
+        "&amp;"
+      )
+      .replaceAll(
+        "<",
+        "&lt;"
+      )
+      .replaceAll(
+        ">",
+        "&gt;"
+      )
+      .replaceAll(
+        '"',
+        "&quot;"
+      )
+      .replaceAll(
+        "'",
+        "&#039;"
+      );
+  }
+
+
+  // =========================================================
+  // GLOBAL ERROR HANDLING
+  // =========================================================
+
+  window.addEventListener(
+    "unhandledrejection",
+    function(event) {
+
+      console.error(
+        "Unhandled error:",
+        event.reason
+      );
+    }
+  );
+
+
+  window.addEventListener(
+    "error",
+    function(event) {
+
+      console.error(
+        "Page error:",
+        event.error
+      );
+    }
+  );
+
+async function viewRejoinCodes(groupId) {
+
+  try {
+
+    if (!currentSessionId) {
+      alert("No activity is currently selected.");
+      return;
+    }
+
+
+    // Get students in this group
+    const {
+      data: members,
+      error: memberError
+    } =
+      await supabaseClient
+        .from("kb_group_members")
+        .select(
+          `
+            student_id,
+            position,
+            kb_students (
+              display_name
+            )
+          `
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        )
+        .eq(
+          "group_id",
+          groupId
+        )
+        .order(
+          "position",
+          {
+            ascending: true
+          }
+        );
+
+
+    if (memberError) {
+      throw memberError;
+    }
+
+
+    if (!members || members.length === 0) {
+      alert("No students found in this group.");
+      return;
+    }
+
+
+    // Get permanent rejoin codes
+    const {
+      data: codes,
+      error: codeError
+    } =
+      await supabaseClient
+        .from("kb_rejoin_codes")
+        .select(
+          "student_id, rejoin_code"
+        )
+        .eq(
+          "session_id",
+          currentSessionId
+        );
+
+
+    if (codeError) {
+      throw codeError;
+    }
+
+
+    const codeMap =
+      new Map(
+        (codes || []).map(
+          row => [
+            row.student_id,
+            row.rejoin_code
+          ]
+        )
+      );
+
+
+    let message =
+      "🔑 REJOIN CODES\n\n";
+
+
+    members.forEach(
+      member => {
+
+        const studentName =
+          member.kb_students
+            ?.display_name ||
+          "Unknown student";
+
+        const code =
+          codeMap.get(
+            member.student_id
+          ) ||
+          "Not found";
+
+        message +=
+          studentName +
+          " — " +
+          code +
+          "\n";
+      }
+    );
+
+
+    alert(message);
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not load rejoin codes:",
+      error
+    );
+
+    alert(
+      "Could not load rejoin codes.\n\n" +
+      error.message
+    );
+  }
+}
+
+console.log("Delete Activity listener attached");
+
+deleteActivityButton.addEventListener(
+  "click",
+  deleteCurrentActivity
+);
+
+
+async function deleteCurrentActivity() {
+
+  if (!currentSessionId) {
+    return;
+  }
+
+
+  const selectedOption =
+    sessionSelect.options[
+      sessionSelect.selectedIndex
+    ];
+
+
+  const activityName =
+    selectedOption
+      ? selectedOption.textContent
+      : "this activity";
+
+
+  const confirmed =
+    confirm(
+      "⚠️ DELETE ACTIVITY?\n\n" +
+      activityName +
+      "\n\n" +
+      "This will permanently delete this activity " +
+      "and its groups, students' ideas, responses, " +
+      "rounds, assignments, consolidations, and " +
+      "rejoin codes.\n\n" +
+      "This cannot be undone.\n\n" +
+      "Are you sure?"
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  try {
+
+    deleteActivityButton.disabled =
+      true;
+
+
+const {
+  error
+} =
+  await supabaseClient.rpc(
+    "kb_delete_activity",
+    {
+      p_session_id: currentSessionId
+    }
+  );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    alert(
+      "Activity deleted successfully."
+    );
+
+
+    currentSessionId =
+      null;
+
+
+    sessionCard.classList.add(
+      "hidden"
+    );
+
+    groupsCard.classList.add(
+      "hidden"
+    );
+
+    groupsContainer.innerHTML =
+      "";
+
+    groupCards.clear();
+
+
+    await loadSessions();
+
+
+  } catch (error) {
+
+    console.error(
+      "Could not delete activity:",
+      error
+    );
+
+
+    alert(
+      "Could not delete activity.\n\n" +
+      error.message
+    );
+
+
+    deleteActivityButton.disabled =
+      !currentSessionId;
+  }
+}
+
+deleteClassButton.addEventListener(
+  "click",
+  deleteCurrentClass
+);
+
+async function deleteCurrentClass() {
+
+  if (!currentClassId) {
+    return;
+  }
+
+  const className =
+    classSelect.options[
+      classSelect.selectedIndex
+    ]?.textContent || "this class";
+
+  const confirmed = confirm(
+    "⚠️ DELETE CLASS?\n\n" +
+    className + "\n\n" +
+    "This will permanently delete:\n" +
+    "• The class\n" +
+    "• All students in the class\n" +
+    "• All activities in the class\n" +
+    "• All groups and group members\n" +
+    "• All ideas and responses\n" +
+    "• All rounds and assignments\n" +
+    "• All consolidations\n" +
+    "• All rejoin codes\n\n" +
+    "This cannot be undone.\n\n" +
+    "Are you sure?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    deleteClassButton.disabled = true;
+
+    const { error } =
+      await supabaseClient.rpc(
+        "kb_delete_class",
+        {
+          p_class_id: currentClassId
+        }
+      );
+
+    if (error) {
+      throw error;
+    }
+
+    alert("Class deleted successfully.");
+
+    currentClassId = null;
+    currentClassStudents = [];
+
+    await loadClasses();
+
+  } catch (error) {
+
+    console.error(
+      "Could not delete class:",
+      error
+    );
+
+    alert(
+      "Could not delete class.\n\n" +
+      error.message
+    );
+
+    deleteClassButton.disabled =
+      !currentClassId;
+  }
+}
+
+</script>
+
+</body>
+</html>
