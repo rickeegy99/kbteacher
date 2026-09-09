@@ -1006,7 +1006,20 @@
       .no-print {
         display: none !important;
       }
+
+.touch-selected-student {
+  outline: 3px solid #2563eb !important;
+  background: #dbeafe !important;
+  transform: scale(1.02);
+}
+
+.touch-move-target {
+  outline: 3px dashed #2563eb !important;
+  background: #eff6ff !important;
+}
+
     }
+
   </style>
 </head>
 
@@ -6100,18 +6113,81 @@ student.appendChild(removeButton);
 
 
           student.addEventListener(
-            "dragstart",
-            function(event) {
+  "dragstart",
+  function(event) {
 
-              event.dataTransfer.setData(
-                "text/plain",
-                member.student_id
-              );
+    event.dataTransfer.setData(
+      "text/plain",
+      member.student_id
+    );
 
-              event.dataTransfer.effectAllowed =
-                "move";
-            }
-          );
+    event.dataTransfer.effectAllowed =
+      "move";
+
+    // Also remember the selected student
+    editGroupsContainer.dataset.selectedStudentId =
+      member.student_id;
+  }
+);
+
+
+// iPad / touchscreen support:
+// Tap a student to select them.
+student.addEventListener(
+  "click",
+  function(event) {
+
+    // Do not trigger when the remove button is tapped
+    if (
+      event.target === removeButton
+    ) {
+      return;
+    }
+
+    const currentlySelected =
+      editGroupsContainer.querySelector(
+        ".touch-selected-student"
+      );
+
+    // Tapping the same student again cancels selection
+    if (
+      currentlySelected === student
+    ) {
+
+      student.classList.remove(
+        "touch-selected-student"
+      );
+
+      delete editGroupsContainer.dataset
+        .selectedStudentId;
+
+      editGroupsMessage.textContent =
+        "Student selection cancelled.";
+
+      return;
+    }
+
+    // Remove previous selection
+    if (currentlySelected) {
+      currentlySelected.classList.remove(
+        "touch-selected-student"
+      );
+    }
+
+    // Select this student
+    student.classList.add(
+      "touch-selected-student"
+    );
+
+    editGroupsContainer.dataset.selectedStudentId =
+      member.student_id;
+
+    editGroupsMessage.textContent =
+      "✓ " +
+      member.display_name +
+      " selected — tap a group to move the student.";
+  }
+);
 
 
           memberList.appendChild(
@@ -6132,6 +6208,61 @@ student.appendChild(removeButton);
         }
       );
 
+memberList.addEventListener(
+  "click",
+  function(event) {
+
+    // Only respond if a student has been selected
+    const selectedStudentId =
+      editGroupsContainer.dataset.selectedStudentId;
+
+    if (!selectedStudentId) {
+      return;
+    }
+
+    const selectedStudent =
+      editGroupsContainer.querySelector(
+        '[data-student-id="' +
+        selectedStudentId +
+        '"]'
+      );
+
+    if (!selectedStudent) {
+      return;
+    }
+
+    // Do nothing if teacher taps the selected student's
+    // own card rather than the group area.
+    if (
+      event.target.closest(
+        "[data-student-id]"
+      ) === selectedStudent
+    ) {
+      return;
+    }
+
+    // Move student into this group
+    memberList.appendChild(
+      selectedStudent
+    );
+
+    // Remove selection
+    selectedStudent.classList.remove(
+      "touch-selected-student"
+    );
+
+    delete editGroupsContainer.dataset
+      .selectedStudentId;
+
+    editGroupsMessage.textContent =
+      "✓ " +
+      selectedStudent.textContent.replace(
+        "REMOVE",
+        ""
+      ).trim() +
+      " moved. Click SAVE GROUPS to confirm.";
+  }
+);
 
       memberList.addEventListener(
         "drop",
@@ -6161,6 +6292,56 @@ student.appendChild(removeButton);
         }
       );
 
+// iPad / touchscreen support:
+// Tap a group to move the selected student here.
+groupBox.addEventListener(
+  "click",
+  function(event) {
+
+    const selectedStudentId =
+      editGroupsContainer.dataset.selectedStudentId;
+
+    if (!selectedStudentId) {
+      return;
+    }
+
+    const selectedStudent =
+      editGroupsContainer.querySelector(
+        '[data-student-id="' +
+        selectedStudentId +
+        '"]'
+      );
+
+    if (!selectedStudent) {
+      return;
+    }
+
+    // If the teacher tapped the selected student's card,
+    // do not move it.
+    if (
+      event.target.closest(
+        "[data-student-id]"
+      ) === selectedStudent
+    ) {
+      return;
+    }
+
+    // Move the selected student into this group.
+    memberList.appendChild(
+      selectedStudent
+    );
+
+    selectedStudent.classList.remove(
+      "touch-selected-student"
+    );
+
+    delete editGroupsContainer.dataset
+      .selectedStudentId;
+
+    editGroupsMessage.textContent =
+      "Student moved. Click SAVE GROUPS to confirm.";
+  }
+);
 
       groupBox.appendChild(
         memberList
