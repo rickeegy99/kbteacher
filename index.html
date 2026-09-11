@@ -1628,6 +1628,25 @@
                    type="text"
                    placeholder="e.g. How can we compare fractions?">
 
+                              <div style="margin-top:10px;">
+
+                                    <label for="newActivityImage">
+                                          Question / Topic Image
+                                          <span style="opacity:.6;">
+                                                 (optional)
+                                          </span>
+                                     </label>
+
+                                     <input id="newActivityImage"
+                                                      type="file"
+                                                      accept="image/png,image/jpeg,image/webp">
+
+                                     <div id="newActivityImagePreview"
+                                                 style="margin-top:8px;">
+                                     </div>
+
+                               </div>
+
           </div>
 
         </div>
@@ -2189,6 +2208,16 @@ const saveEditGroupsButton =
   const newActivityTopic =
     document.getElementById("newActivityTopic");
 
+  const newActivityImage =
+    document.getElementById(
+      "newActivityImage"
+    );
+
+  const newActivityImagePreview =
+    document.getElementById(
+      "newActivityImagePreview"
+    );
+
   const participantList =
     document.getElementById("participantList");
 
@@ -2319,6 +2348,45 @@ const saveEditGroupsButton =
       "closeGroupModalFooter"
     );
 
+  newActivityImage.addEventListener(
+    "change",
+    function() {
+
+      newActivityImagePreview.innerHTML = "";
+
+      const file =
+        newActivityImage.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      const image =
+        document.createElement("img");
+
+      image.src =
+        URL.createObjectURL(file);
+
+      image.style.maxWidth =
+        "100%";
+
+      image.style.maxHeight =
+        "250px";
+
+      image.style.marginTop =
+        "6px";
+
+      image.style.borderRadius =
+        "8px";
+
+      image.style.objectFit =
+        "contain";
+
+      newActivityImagePreview.appendChild(
+        image
+      );
+    }
+  );
 
   // =========================================================
   // STATE
@@ -4709,8 +4777,80 @@ saveEditGroupsButton.addEventListener(
           .single();
 
 
-      if (sessionError) {
+            if (sessionError) {
         throw sessionError;
+      }
+
+
+      // -----------------------------------------------------
+      // 4A. Upload question / topic image (if selected)
+      // -----------------------------------------------------
+
+      let questionImagePath = null;
+
+      if (
+        newActivityImage &&
+        newActivityImage.files &&
+        newActivityImage.files.length > 0
+      ) {
+
+        const imageFile =
+          newActivityImage.files[0];
+
+        const fileExtension =
+          imageFile.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+        const imagePath =
+          session.id +
+          "/question." +
+          fileExtension;
+
+        const {
+          error: imageUploadError
+        } =
+          await supabaseClient
+            .storage
+            .from("kb-question-images")
+            .upload(
+              imagePath,
+              imageFile,
+              {
+                upsert: true,
+                contentType:
+                  imageFile.type
+              }
+            );
+
+        if (imageUploadError) {
+          throw imageUploadError;
+        }
+
+        questionImagePath =
+          imagePath;
+
+
+        // Save the Storage path to the session
+        const {
+          error: imagePathError
+        } =
+          await supabaseClient
+            .from("kb_sessions")
+            .update({
+              question_image_path:
+                questionImagePath
+            })
+            .eq(
+              "id",
+              session.id
+            );
+
+        if (imagePathError) {
+          throw imagePathError;
+        }
+
       }
 
 
